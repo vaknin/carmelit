@@ -1,0 +1,21 @@
+# Android
+app/build/
+.kotlin/
+*.apk
+*.aab
+.gradle/
+build/
+local.properties
+*.keystore
+*.jks
+.idea/
+*.iml
+captures/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# Agent worktrees
+.claude/worktrees/

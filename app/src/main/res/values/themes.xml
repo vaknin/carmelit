@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose draws everything; this only styles the window before the first frame. The app is
+         dark only, so the background is black and nothing flashes white. -->
+    <style name="Theme.Carmelit" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#000000</item>
+    </style>
+</resources>

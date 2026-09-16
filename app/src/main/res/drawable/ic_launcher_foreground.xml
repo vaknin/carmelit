@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A funicular track: one diagonal bar from lower-left to upper-right with a car (a dot) on it.
+     Centred in the 66 dp safe circle of the 108 dp canvas. Also used as the monochrome layer. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,72 L74,36 a4,4 0 0 1 5.5,5.5 L39.5,77.5 a4,4 0 0 1 -5.5,-5.5 z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M56.75,56.75 m-9,0 a9,9 0 1 0 18,0 a9,9 0 1 0 -18,0 z" />
+</vector>
