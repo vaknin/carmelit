@@ -1,12 +1,13 @@
 package com.kivan.carmelit
 
-import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -16,6 +17,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.kivan.carmelit.ui.MainScreen
 import com.kivan.carmelit.ui.SettingsScreen
 import kotlinx.coroutines.delay
@@ -27,11 +30,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
+        enableEdgeToEdge(SystemBarStyle.dark(android.graphics.Color.TRANSPARENT), SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
         val store = SettingsStore(this)
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
-                App(store, resumeTick)
+                // Sets LocalContentColor; without a Surface, Text defaults to black on black.
+                Surface(color = Color.Black, contentColor = Color.White, modifier = Modifier.fillMaxSize()) {
+                    App(store, resumeTick)
+                }
             }
         }
     }

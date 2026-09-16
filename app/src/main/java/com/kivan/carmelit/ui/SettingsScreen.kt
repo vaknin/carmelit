@@ -90,9 +90,9 @@ fun SettingsScreen(initial: Settings, onDone: (Settings) -> Unit) {
         Text("Advanced: minutes after the terminus departure until the train reaches ${work.english}",
             style = MaterialTheme.typography.bodySmall, color = Color(0xFF9A9A9A))
         Spacer(Modifier.height(12.dp))
-        NumberField("To work (arrival estimate)", toWorkOffset, placeholder = fmt(toWorkDefault), decimal = true) { toWorkOffset = it }
+        NumberField("To work · arrival estimate (default ${fmt(toWorkDefault)})", toWorkOffset, decimal = true) { toWorkOffset = it }
         Spacer(Modifier.height(12.dp))
-        NumberField("From work (boarding time)", fromWorkOffset, placeholder = fmt(fromWorkDefault), decimal = true) { fromWorkOffset = it }
+        NumberField("From work · boarding time (default ${fmt(fromWorkDefault)})", fromWorkOffset, decimal = true) { fromWorkOffset = it }
         Spacer(Modifier.height(32.dp))
 
         Button(onClick = { onDone(build()) }, modifier = Modifier.fillMaxWidth()) { Text("Done") }
@@ -123,7 +123,6 @@ private fun StationPicker(label: String, value: Station, onChange: (Station) -> 
 private fun NumberField(
     label: String,
     value: String,
-    placeholder: String? = null,
     decimal: Boolean = false,
     onChange: (String) -> Unit,
 ) {
@@ -131,7 +130,6 @@ private fun NumberField(
         value = value,
         onValueChange = onChange,
         label = { Text(label) },
-        placeholder = placeholder?.let { { Text(it) } },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = if (decimal) KeyboardType.Decimal else KeyboardType.Number),
         modifier = Modifier.fillMaxWidth(),

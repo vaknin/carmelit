@@ -37,6 +37,9 @@ private fun ZonedDateTime.hhmmRounded(): String = plusSeconds(30).format(HHMM)
 
 private val Dim = Color(0xFF9A9A9A)
 
+/** Wrap in a bidi isolate (FSI … PDI) so a Hebrew name inside an English line does not reorder its neighbours. */
+private fun String.isolated(): String = "\u2068$this\u2069"
+
 @Composable
 fun MainScreen(
     plan: Plan,
@@ -59,7 +62,7 @@ fun MainScreen(
             Headline(first, now)
             Spacer(Modifier.height(32.dp))
             Text(
-                "${first.departure.hhmm()} train from ${plan.from.hebrew} → ~${first.arriveAt.hhmmRounded()} at ${plan.to.hebrew}",
+                "${first.departure.hhmm()} train from ${plan.from.hebrew.isolated()} → ~${first.arriveAt.hhmmRounded()} at ${plan.to.hebrew.isolated()}",
                 style = MaterialTheme.typography.bodyLarge,
             )
             if (plan.trips.size > 1) {
