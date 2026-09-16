@@ -110,3 +110,59 @@ Refresh every ~10 s while visible. Everything is offline and deterministic.
 Kotlin, single Activity, Jetpack Compose, `java.time` with `ZoneId.of("Asia/Jerusalem")`
 (gives DST for free), DataStore/SharedPreferences for settings. No dependencies beyond
 that. Target: just my phone.
+
+## UI design (v0.2)
+
+Decided 2026-09-16: black OLED background, one accent (Carmelit red `#E5322D`) reserved for
+urgency and the selected direction; English chrome, Hebrew station names with the English
+transliteration underneath (no RTL layout). No new dependencies: the two icons are vector
+drawables. Tabular figures everywhere a number ticks or sits in a column.
+
+| Token | Value | Used for |
+|---|---|---|
+| background / surface | `#000000` | screens |
+| onSurface | `#F2F2F2` | primary text |
+| surfaceVariant / onSurfaceVariant | `#141414` / `#9A9A9A` | trip card, dialog / dim text |
+| outlineVariant | `#262626` | dividers, segmented-button border |
+| primary | `#E5322D` | ≤ 3 min countdown, "now", selected direction, countdown bar |
+| error | `#FF6E6E` | validation text |
+
+### Main screen
+
+```
+[ To work │ To home ]                 ⚙     segmented direction control + settings
+LEAVE IN
+14                                          ~120 sp, red when ≤ 3 min; "now" under 60 s; "6 h 11" ≥ 100 min
+at 08:10                                    "tomorrow at 05:38" when not today
+████████████░░░░░░░░░░░░░░░░░░░░░░░░░░      2 dp bar draining over one headway
+┌──────────────────────────────────────┐
+│ 08:32                        ~08:37  │    train time → estimated arrival
+│ מרכז הכרמל                  הנביאים │    each Text is pure Hebrew (no bidi tricks)
+│ Merkaz HaCarmel            HaNevi'im │
+└──────────────────────────────────────┘
+LATER
+leave 08:22      08:44 train     ~08:49
+leave 08:34      08:56 train     ~09:01
+TOMORROW                                    day divider only when the day changes
+leave 05:38      06:00 train     ~06:05
+Last train today 23:45 · had to leave by 23:23     only when the headline is not today
+Wednesday · weekday timetable · every 12 min 07:00–22:00
+```
+
+### Settings screen
+
+```
+←  Settings                                 back arrow and system back both save; no Done button
+ROUTE
+Home station              מרכז הכרמל  ›     tap → dialog with the six stations top→bottom, radio
+Work station                 הנביאים  ›
+Down the hill, 3 stops · ~5 min             computed
+WALKING
+Home → station                 [22] min     number keyboard, error if not a number
+Work → station                 [ 5] min
+Safety margin                  [ 0] min
+CALIBRATION                           ▾     collapsed unless an override is set
+To work · 3 stops, default 5     [    ]     Reset button when set
+From work · 2 stops, default 3   [    ]
+v0.2 · timetable from carmelithaifa.co.il
+```

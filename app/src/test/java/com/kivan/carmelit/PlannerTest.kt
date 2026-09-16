@@ -32,6 +32,15 @@ class PlannerTest {
         val p = nextTrips(at("2026-09-16T23:30"), Settings(), goingHome = false)
         assertEquals(at("2026-09-17T06:00"), p.trips[0].departure)
         assertEquals(at("2026-09-17T05:38"), p.trips[0].leaveAt)
+        assertEquals(DayType.WEEKDAY, p.todayType)
+        assertEquals(at("2026-09-16T23:45"), p.missedLast?.departure)
+        assertEquals(at("2026-09-16T23:23"), p.missedLast?.leaveAt)
+    }
+
+    @Test fun missedLastIsNullWhileTodayStillHasTrains() {
+        val p = nextTrips(at("2026-09-16T07:48"), Settings(), goingHome = false)
+        assertEquals(null, p.missedLast)
+        assertEquals(DayType.WEEKDAY, p.todayType)
     }
 
     @Test fun fridayAfternoonRollsToMotzeiShabbat() {
@@ -52,6 +61,16 @@ class PlannerTest {
         val p = nextTrips(at("2026-09-11T15:00"), Settings(), goingHome = false)
         assertEquals(at("2026-09-13T20:00"), p.trips[0].departure)
         assertEquals(java.time.LocalDate.parse("2026-09-13"), p.serviceDay)
+        // Friday 15:00: the 14:48 Friday train has gone; Shabbat + Rosh Hashana day II are closed.
+        assertEquals(DayType.FRIDAY, p.todayType)
+        assertEquals(at("2026-09-11T14:48"), p.missedLast?.departure)
+    }
+
+    @Test fun closedTodayHasNoMissedTrain() {
+        val p = nextTrips(at("2026-09-12T10:00"), Settings(), goingHome = false)
+        assertEquals(DayType.CLOSED, p.todayType)
+        assertEquals(null, p.missedLast)
+        assertEquals(at("2026-09-13T20:00"), p.trips[0].departure)
     }
 
     @Test fun margin() {

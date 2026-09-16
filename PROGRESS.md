@@ -5,8 +5,8 @@ Keep this file current: one dated entry per work session, plus the living sectio
 
 ## Status (2026-09-16)
 
-**v0.1 is complete, installed on the Pixel 8 and verified by screenshot.** Everything in
-IDEA.md except the home-screen widget is implemented. 27 JVM unit tests pass.
+**v0.2: UI redesign built and installed on the Pixel 8** (design in IDEA.md "UI design (v0.2)").
+Everything in IDEA.md except the home-screen widget is implemented. 30 JVM unit tests pass.
 
 | Area | State |
 |---|---|
@@ -16,9 +16,10 @@ IDEA.md except the home-screen widget is implemented. 27 JVM unit tests pass.
 | Day classifier (`DayClassifier.kt`) | done, incl. DST via `Asia/Jerusalem` zone rules |
 | Planner (`Planner.kt`) | done, scans 8 days ahead, both directions |
 | Settings + SharedPreferences (`Settings.kt`) | done, verified to persist across restart |
-| Main screen (`ui/MainScreen.kt`) | done, 10 s tick, refreshes on resume |
-| Settings screen (`ui/SettingsScreen.kt`) | done |
-| "Going home" swap chip | done |
+| Theme (`ui/Theme.kt`) | done: black OLED scheme, one red accent, tabular numerals |
+| Main screen (`ui/MainScreen.kt`) | done, 10 s tick, refreshes on resume; v0.2: segmented direction, urgency colour, countdown bar, trip card, "Later" table with day dividers, service notice |
+| Settings screen (`ui/SettingsScreen.kt`) | done; v0.2: sections, station dialogs, "min" fields with validation, collapsible calibration with Reset |
+| Direction switch ("To work / To home") | done |
 | Home-screen widget | **not started** (nice-to-have) |
 | Calibration of the ~5 min HaNevi'im offset from a real ride | **not done** (needs a ride) |
 
@@ -41,6 +42,12 @@ IDEA.md except the home-screen widget is implemented. 27 JVM unit tests pass.
   activity-compose, Compose UI/Material3 and JUnit. Zero permissions in the manifest.
 - **Offsets in seconds** (0, 90, 180, 300, 390, 480) so 1.5 / 6.5 min are exact; the UI floors
   the remaining time to whole minutes, which errs on the early side.
+- **`Plan.todayType` / `Plan.missedLast`** (v0.2) exist only so the screen can say *why* the
+  headline jumped to another day ("Last train today 23:45 · had to leave by 23:23" or "No
+  service today (Shabbat)"). The owner hit this at 23:27: the 22 min walk makes the 23:45
+  uncatchable after 23:23 and the 24:00 closing train is excluded (decision 1 above).
+- **No icon library**: `material3` 1.4 no longer pulls in `material-icons-core`, so the three
+  icons are vector drawables in `res/drawable`. Dependency list unchanged.
 
 ## Verified on device (2026-09-16, Wed 23:14–23:16 IDT)
 
@@ -75,8 +82,7 @@ closed Shabbat → Sunday evening · margin · going home · both offset overrid
    real DST and the site's "April–October"; adjust `isDst` if it follows the calendar months.
 4. **Widget** ("Leave in N min" on the home screen). Would need Glance or a RemoteViews
    AppWidgetProvider plus a periodic update; deliberately deferred.
-5. Small polish ideas, none blocking: hide "then" trips that are on a different day than the
-   headline, or label them; a "Tomorrow" prefix already appears on the headline.
+5. ~~Label "then" trips on a different day~~ — done in v0.2 (day divider in the "Later" table).
 
 ## Working with the phone
 
@@ -97,3 +103,6 @@ adb exec-out screencap -p > shot.png      # eyeball the UI; green builds are not
   calendar, wrote timetable/classifier/planner with 27 tests, built the Compose UI, paired the
   Pixel 8 over Wi-Fi, installed, found and fixed three rendering bugs, verified persistence.
   Commits `b8b7e6b` → `5a2b57d`.
+- **2026-09-16 (evening)** — v0.2 UI redesign after the owner asked for a better UX/UI: theme
+  file, rewritten main and settings screens, `todayType`/`missedLast` on `Plan` with 3 new
+  tests, vector icons, version 0.2. Design captured in IDEA.md first.

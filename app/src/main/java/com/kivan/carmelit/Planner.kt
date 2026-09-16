@@ -13,7 +13,11 @@ data class Trip(
     val dayType: DayType,
 )
 
-/** The answer for one direction: the next [Trip]s and the timetable of the first one's day. */
+/**
+ * The answer for one direction: the next [Trip]s and the timetable of the first one's day.
+ * [todayType] is today's timetable and [missedLast] the last train of today whose leave time has
+ * already passed, both so the UI can explain a headline that jumps to a later day.
+ */
 data class Plan(
     val from: Station,
     val to: Station,
@@ -21,6 +25,8 @@ data class Plan(
     val serviceDay: LocalDate,
     val dayType: DayType,
     val isDst: Boolean,
+    val todayType: DayType,
+    val missedLast: Trip?,
 )
 
 private fun minutesToDuration(min: Double): Duration = Duration.ofSeconds(Math.round(min * 60))
@@ -45,19 +51,28 @@ fun nextTrips(now: ZonedDateTime, s: Settings, goingHome: Boolean, count: Int = 
     var firstDay: LocalDate? = null
     var firstType = DayType.CLOSED
     var firstDst = false
+    var todayType = DayType.CLOSED
+    var missedLast: Trip? = null
     days@ for (i in 0L until 8L) {
         val day = today.plusDays(i)
         val type = classifyDay(day)
         val dst = isDst(day)
+        if (i == 0L) todayType = type
         for (t in departures(type, dst)) {
             val dep = day.atTime(t).atZone(ZONE)
             val board = dep.plus(boardOffset)
             val leave = board.minus(walk).minus(margin)
-            if (leave < now) continue
+            val trip = Trip(dep, board, leave, dep.plus(alightOffset), type)
+            if (leave < now) {
+                if (i == 0L) missedLast = trip
+                continue
+            }
             if (firstDay == null) { firstDay = day; firstType = type; firstDst = dst }
-            trips += Trip(dep, board, leave, dep.plus(alightOffset), type)
+            trips += trip
             if (trips.size >= count) break@days
         }
     }
-    return Plan(from, to, trips, firstDay ?: today, firstType, firstDst)
+    // Only meaningful when today still had trains but none is catchable any more.
+    if (firstDay == today) missedLast = null
+    return Plan(from, to, trips, firstDay ?: today, firstType, firstDst, todayType, missedLast)
 }
