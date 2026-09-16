@@ -28,6 +28,7 @@ import java.time.Duration
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 private val HHMM: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -110,7 +111,7 @@ private fun Headline(first: Trip, now: ZonedDateTime) {
                 modifier = Modifier.padding(bottom = 20.dp))
         }
     }
-    val dayPrefix = when (val days = Duration.between(now.toLocalDate().atStartOfDay(now.zone), first.leaveAt.toLocalDate().atStartOfDay(now.zone)).toDays()) {
+    val dayPrefix = when (ChronoUnit.DAYS.between(now.toLocalDate(), first.leaveAt.toLocalDate())) {
         0L -> ""
         1L -> "tomorrow "
         else -> first.leaveAt.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH) + " "
