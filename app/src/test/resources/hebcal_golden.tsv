@@ -1,0 +1,615 @@
+1999-09-10	erev	Erev Rosh Hashana
+1999-09-11	chag	Rosh Hashana I
+1999-09-12	chag	Rosh Hashana II
+1999-09-19	erevYK	Erev Yom Kippur
+1999-09-20	YK	Yom Kippur
+1999-09-24	erev	Erev Sukkot
+1999-09-25	chag	Sukkot
+1999-10-01	erev	Hoshana Raba
+1999-10-02	chag	Shmini Atzeret / Simchat Torah
+2000-04-19	erevPesach	Erev Pesach
+2000-04-20	chag	Pesach I
+2000-04-25	erev	Erev Shvi'i shel Pesach
+2000-04-26	chag	Shvi'i shel Pesach
+2000-06-08	erev	Erev Shavuot
+2000-06-09	chag	Shavuot
+2000-09-29	erev	Erev Rosh Hashana
+2000-09-30	chag	Rosh Hashana I
+2000-10-01	chag	Rosh Hashana II
+2000-10-08	erevYK	Erev Yom Kippur
+2000-10-09	YK	Yom Kippur
+2000-10-13	erev	Erev Sukkot
+2000-10-14	chag	Sukkot
+2000-10-20	erev	Hoshana Raba
+2000-10-21	chag	Shmini Atzeret / Simchat Torah
+2001-04-07	erevPesach	Erev Pesach
+2001-04-08	chag	Pesach I
+2001-04-13	erev	Erev Shvi'i shel Pesach
+2001-04-14	chag	Shvi'i shel Pesach
+2001-05-27	erev	Erev Shavuot
+2001-05-28	chag	Shavuot
+2001-09-17	erev	Erev Rosh Hashana
+2001-09-18	chag	Rosh Hashana I
+2001-09-19	chag	Rosh Hashana II
+2001-09-26	erevYK	Erev Yom Kippur
+2001-09-27	YK	Yom Kippur
+2001-10-01	erev	Erev Sukkot
+2001-10-02	chag	Sukkot
+2001-10-08	erev	Hoshana Raba
+2001-10-09	chag	Shmini Atzeret / Simchat Torah
+2002-03-27	erevPesach	Erev Pesach
+2002-03-28	chag	Pesach I
+2002-04-02	erev	Erev Shvi'i shel Pesach
+2002-04-03	chag	Shvi'i shel Pesach
+2002-05-16	erev	Erev Shavuot
+2002-05-17	chag	Shavuot
+2002-09-06	erev	Erev Rosh Hashana
+2002-09-07	chag	Rosh Hashana I
+2002-09-08	chag	Rosh Hashana II
+2002-09-15	erevYK	Erev Yom Kippur
+2002-09-16	YK	Yom Kippur
+2002-09-20	erev	Erev Sukkot
+2002-09-21	chag	Sukkot
+2002-09-27	erev	Hoshana Raba
+2002-09-28	chag	Shmini Atzeret / Simchat Torah
+2003-04-16	erevPesach	Erev Pesach
+2003-04-17	chag	Pesach I
+2003-04-22	erev	Erev Shvi'i shel Pesach
+2003-04-23	chag	Shvi'i shel Pesach
+2003-06-05	erev	Erev Shavuot
+2003-06-06	chag	Shavuot
+2003-09-26	erev	Erev Rosh Hashana
+2003-09-27	chag	Rosh Hashana I
+2003-09-28	chag	Rosh Hashana II
+2003-10-05	erevYK	Erev Yom Kippur
+2003-10-06	YK	Yom Kippur
+2003-10-10	erev	Erev Sukkot
+2003-10-11	chag	Sukkot
+2003-10-17	erev	Hoshana Raba
+2003-10-18	chag	Shmini Atzeret / Simchat Torah
+2004-04-05	erevPesach	Erev Pesach
+2004-04-06	chag	Pesach I
+2004-04-11	erev	Erev Shvi'i shel Pesach
+2004-04-12	chag	Shvi'i shel Pesach
+2004-05-25	erev	Erev Shavuot
+2004-05-26	chag	Shavuot
+2004-09-15	erev	Erev Rosh Hashana
+2004-09-16	chag	Rosh Hashana I
+2004-09-17	chag	Rosh Hashana II
+2004-09-24	erevYK	Erev Yom Kippur
+2004-09-25	YK	Yom Kippur
+2004-09-29	erev	Erev Sukkot
+2004-09-30	chag	Sukkot
+2004-10-06	erev	Hoshana Raba
+2004-10-07	chag	Shmini Atzeret / Simchat Torah
+2005-04-23	erevPesach	Erev Pesach
+2005-04-24	chag	Pesach I
+2005-04-29	erev	Erev Shvi'i shel Pesach
+2005-04-30	chag	Shvi'i shel Pesach
+2005-06-12	erev	Erev Shavuot
+2005-06-13	chag	Shavuot
+2005-10-03	erev	Erev Rosh Hashana
+2005-10-04	chag	Rosh Hashana I
+2005-10-05	chag	Rosh Hashana II
+2005-10-12	erevYK	Erev Yom Kippur
+2005-10-13	YK	Yom Kippur
+2005-10-17	erev	Erev Sukkot
+2005-10-18	chag	Sukkot
+2005-10-24	erev	Hoshana Raba
+2005-10-25	chag	Shmini Atzeret / Simchat Torah
+2006-04-12	erevPesach	Erev Pesach
+2006-04-13	chag	Pesach I
+2006-04-18	erev	Erev Shvi'i shel Pesach
+2006-04-19	chag	Shvi'i shel Pesach
+2006-06-01	erev	Erev Shavuot
+2006-06-02	chag	Shavuot
+2006-09-22	erev	Erev Rosh Hashana
+2006-09-23	chag	Rosh Hashana I
+2006-09-24	chag	Rosh Hashana II
+2006-10-01	erevYK	Erev Yom Kippur
+2006-10-02	YK	Yom Kippur
+2006-10-06	erev	Erev Sukkot
+2006-10-07	chag	Sukkot
+2006-10-13	erev	Hoshana Raba
+2006-10-14	chag	Shmini Atzeret / Simchat Torah
+2007-04-02	erevPesach	Erev Pesach
+2007-04-03	chag	Pesach I
+2007-04-08	erev	Erev Shvi'i shel Pesach
+2007-04-09	chag	Shvi'i shel Pesach
+2007-05-22	erev	Erev Shavuot
+2007-05-23	chag	Shavuot
+2007-09-12	erev	Erev Rosh Hashana
+2007-09-13	chag	Rosh Hashana I
+2007-09-14	chag	Rosh Hashana II
+2007-09-21	erevYK	Erev Yom Kippur
+2007-09-22	YK	Yom Kippur
+2007-09-26	erev	Erev Sukkot
+2007-09-27	chag	Sukkot
+2007-10-03	erev	Hoshana Raba
+2007-10-04	chag	Shmini Atzeret / Simchat Torah
+2008-04-19	erevPesach	Erev Pesach
+2008-04-20	chag	Pesach I
+2008-04-25	erev	Erev Shvi'i shel Pesach
+2008-04-26	chag	Shvi'i shel Pesach
+2008-06-08	erev	Erev Shavuot
+2008-06-09	chag	Shavuot
+2008-09-29	erev	Erev Rosh Hashana
+2008-09-30	chag	Rosh Hashana I
+2008-10-01	chag	Rosh Hashana II
+2008-10-08	erevYK	Erev Yom Kippur
+2008-10-09	YK	Yom Kippur
+2008-10-13	erev	Erev Sukkot
+2008-10-14	chag	Sukkot
+2008-10-20	erev	Hoshana Raba
+2008-10-21	chag	Shmini Atzeret / Simchat Torah
+2009-04-08	erevPesach	Erev Pesach
+2009-04-09	chag	Pesach I
+2009-04-14	erev	Erev Shvi'i shel Pesach
+2009-04-15	chag	Shvi'i shel Pesach
+2009-05-28	erev	Erev Shavuot
+2009-05-29	chag	Shavuot
+2009-09-18	erev	Erev Rosh Hashana
+2009-09-19	chag	Rosh Hashana I
+2009-09-20	chag	Rosh Hashana II
+2009-09-27	erevYK	Erev Yom Kippur
+2009-09-28	YK	Yom Kippur
+2009-10-02	erev	Erev Sukkot
+2009-10-03	chag	Sukkot
+2009-10-09	erev	Hoshana Raba
+2009-10-10	chag	Shmini Atzeret / Simchat Torah
+2010-03-29	erevPesach	Erev Pesach
+2010-03-30	chag	Pesach I
+2010-04-04	erev	Erev Shvi'i shel Pesach
+2010-04-05	chag	Shvi'i shel Pesach
+2010-05-18	erev	Erev Shavuot
+2010-05-19	chag	Shavuot
+2010-09-08	erev	Erev Rosh Hashana
+2010-09-09	chag	Rosh Hashana I
+2010-09-10	chag	Rosh Hashana II
+2010-09-17	erevYK	Erev Yom Kippur
+2010-09-18	YK	Yom Kippur
+2010-09-22	erev	Erev Sukkot
+2010-09-23	chag	Sukkot
+2010-09-29	erev	Hoshana Raba
+2010-09-30	chag	Shmini Atzeret / Simchat Torah
+2011-04-18	erevPesach	Erev Pesach
+2011-04-19	chag	Pesach I
+2011-04-24	erev	Erev Shvi'i shel Pesach
+2011-04-25	chag	Shvi'i shel Pesach
+2011-06-07	erev	Erev Shavuot
+2011-06-08	chag	Shavuot
+2011-09-28	erev	Erev Rosh Hashana
+2011-09-29	chag	Rosh Hashana I
+2011-09-30	chag	Rosh Hashana II
+2011-10-07	erevYK	Erev Yom Kippur
+2011-10-08	YK	Yom Kippur
+2011-10-12	erev	Erev Sukkot
+2011-10-13	chag	Sukkot
+2011-10-19	erev	Hoshana Raba
+2011-10-20	chag	Shmini Atzeret / Simchat Torah
+2012-04-06	erevPesach	Erev Pesach
+2012-04-07	chag	Pesach I
+2012-04-12	erev	Erev Shvi'i shel Pesach
+2012-04-13	chag	Shvi'i shel Pesach
+2012-05-26	erev	Erev Shavuot
+2012-05-27	chag	Shavuot
+2012-09-16	erev	Erev Rosh Hashana
+2012-09-17	chag	Rosh Hashana I
+2012-09-18	chag	Rosh Hashana II
+2012-09-25	erevYK	Erev Yom Kippur
+2012-09-26	YK	Yom Kippur
+2012-09-30	erev	Erev Sukkot
+2012-10-01	chag	Sukkot
+2012-10-07	erev	Hoshana Raba
+2012-10-08	chag	Shmini Atzeret / Simchat Torah
+2013-03-25	erevPesach	Erev Pesach
+2013-03-26	chag	Pesach I
+2013-03-31	erev	Erev Shvi'i shel Pesach
+2013-04-01	chag	Shvi'i shel Pesach
+2013-05-14	erev	Erev Shavuot
+2013-05-15	chag	Shavuot
+2013-09-04	erev	Erev Rosh Hashana
+2013-09-05	chag	Rosh Hashana I
+2013-09-06	chag	Rosh Hashana II
+2013-09-13	erevYK	Erev Yom Kippur
+2013-09-14	YK	Yom Kippur
+2013-09-18	erev	Erev Sukkot
+2013-09-19	chag	Sukkot
+2013-09-25	erev	Hoshana Raba
+2013-09-26	chag	Shmini Atzeret / Simchat Torah
+2014-04-14	erevPesach	Erev Pesach
+2014-04-15	chag	Pesach I
+2014-04-20	erev	Erev Shvi'i shel Pesach
+2014-04-21	chag	Shvi'i shel Pesach
+2014-06-03	erev	Erev Shavuot
+2014-06-04	chag	Shavuot
+2014-09-24	erev	Erev Rosh Hashana
+2014-09-25	chag	Rosh Hashana I
+2014-09-26	chag	Rosh Hashana II
+2014-10-03	erevYK	Erev Yom Kippur
+2014-10-04	YK	Yom Kippur
+2014-10-08	erev	Erev Sukkot
+2014-10-09	chag	Sukkot
+2014-10-15	erev	Hoshana Raba
+2014-10-16	chag	Shmini Atzeret / Simchat Torah
+2015-04-03	erevPesach	Erev Pesach
+2015-04-04	chag	Pesach I
+2015-04-09	erev	Erev Shvi'i shel Pesach
+2015-04-10	chag	Shvi'i shel Pesach
+2015-05-23	erev	Erev Shavuot
+2015-05-24	chag	Shavuot
+2015-09-13	erev	Erev Rosh Hashana
+2015-09-14	chag	Rosh Hashana I
+2015-09-15	chag	Rosh Hashana II
+2015-09-22	erevYK	Erev Yom Kippur
+2015-09-23	YK	Yom Kippur
+2015-09-27	erev	Erev Sukkot
+2015-09-28	chag	Sukkot
+2015-10-04	erev	Hoshana Raba
+2015-10-05	chag	Shmini Atzeret / Simchat Torah
+2016-04-22	erevPesach	Erev Pesach
+2016-04-23	chag	Pesach I
+2016-04-28	erev	Erev Shvi'i shel Pesach
+2016-04-29	chag	Shvi'i shel Pesach
+2016-06-11	erev	Erev Shavuot
+2016-06-12	chag	Shavuot
+2016-10-02	erev	Erev Rosh Hashana
+2016-10-03	chag	Rosh Hashana I
+2016-10-04	chag	Rosh Hashana II
+2016-10-11	erevYK	Erev Yom Kippur
+2016-10-12	YK	Yom Kippur
+2016-10-16	erev	Erev Sukkot
+2016-10-17	chag	Sukkot
+2016-10-23	erev	Hoshana Raba
+2016-10-24	chag	Shmini Atzeret / Simchat Torah
+2017-04-10	erevPesach	Erev Pesach
+2017-04-11	chag	Pesach I
+2017-04-16	erev	Erev Shvi'i shel Pesach
+2017-04-17	chag	Shvi'i shel Pesach
+2017-05-30	erev	Erev Shavuot
+2017-05-31	chag	Shavuot
+2017-09-20	erev	Erev Rosh Hashana
+2017-09-21	chag	Rosh Hashana I
+2017-09-22	chag	Rosh Hashana II
+2017-09-29	erevYK	Erev Yom Kippur
+2017-09-30	YK	Yom Kippur
+2017-10-04	erev	Erev Sukkot
+2017-10-05	chag	Sukkot
+2017-10-11	erev	Hoshana Raba
+2017-10-12	chag	Shmini Atzeret / Simchat Torah
+2018-03-30	erevPesach	Erev Pesach
+2018-03-31	chag	Pesach I
+2018-04-05	erev	Erev Shvi'i shel Pesach
+2018-04-06	chag	Shvi'i shel Pesach
+2018-05-19	erev	Erev Shavuot
+2018-05-20	chag	Shavuot
+2018-09-09	erev	Erev Rosh Hashana
+2018-09-10	chag	Rosh Hashana I
+2018-09-11	chag	Rosh Hashana II
+2018-09-18	erevYK	Erev Yom Kippur
+2018-09-19	YK	Yom Kippur
+2018-09-23	erev	Erev Sukkot
+2018-09-24	chag	Sukkot
+2018-09-30	erev	Hoshana Raba
+2018-10-01	chag	Shmini Atzeret / Simchat Torah
+2019-04-19	erevPesach	Erev Pesach
+2019-04-20	chag	Pesach I
+2019-04-25	erev	Erev Shvi'i shel Pesach
+2019-04-26	chag	Shvi'i shel Pesach
+2019-06-08	erev	Erev Shavuot
+2019-06-09	chag	Shavuot
+2019-09-29	erev	Erev Rosh Hashana
+2019-09-30	chag	Rosh Hashana I
+2019-10-01	chag	Rosh Hashana II
+2019-10-08	erevYK	Erev Yom Kippur
+2019-10-09	YK	Yom Kippur
+2019-10-13	erev	Erev Sukkot
+2019-10-14	chag	Sukkot
+2019-10-20	erev	Hoshana Raba
+2019-10-21	chag	Shmini Atzeret / Simchat Torah
+2020-04-08	erevPesach	Erev Pesach
+2020-04-09	chag	Pesach I
+2020-04-14	erev	Erev Shvi'i shel Pesach
+2020-04-15	chag	Shvi'i shel Pesach
+2020-05-28	erev	Erev Shavuot
+2020-05-29	chag	Shavuot
+2020-09-18	erev	Erev Rosh Hashana
+2020-09-19	chag	Rosh Hashana I
+2020-09-20	chag	Rosh Hashana II
+2020-09-27	erevYK	Erev Yom Kippur
+2020-09-28	YK	Yom Kippur
+2020-10-02	erev	Erev Sukkot
+2020-10-03	chag	Sukkot
+2020-10-09	erev	Hoshana Raba
+2020-10-10	chag	Shmini Atzeret / Simchat Torah
+2021-03-27	erevPesach	Erev Pesach
+2021-03-28	chag	Pesach I
+2021-04-02	erev	Erev Shvi'i shel Pesach
+2021-04-03	chag	Shvi'i shel Pesach
+2021-05-16	erev	Erev Shavuot
+2021-05-17	chag	Shavuot
+2021-09-06	erev	Erev Rosh Hashana
+2021-09-07	chag	Rosh Hashana I
+2021-09-08	chag	Rosh Hashana II
+2021-09-15	erevYK	Erev Yom Kippur
+2021-09-16	YK	Yom Kippur
+2021-09-20	erev	Erev Sukkot
+2021-09-21	chag	Sukkot
+2021-09-27	erev	Hoshana Raba
+2021-09-28	chag	Shmini Atzeret / Simchat Torah
+2022-04-15	erevPesach	Erev Pesach
+2022-04-16	chag	Pesach I
+2022-04-21	erev	Erev Shvi'i shel Pesach
+2022-04-22	chag	Shvi'i shel Pesach
+2022-06-04	erev	Erev Shavuot
+2022-06-05	chag	Shavuot
+2022-09-25	erev	Erev Rosh Hashana
+2022-09-26	chag	Rosh Hashana I
+2022-09-27	chag	Rosh Hashana II
+2022-10-04	erevYK	Erev Yom Kippur
+2022-10-05	YK	Yom Kippur
+2022-10-09	erev	Erev Sukkot
+2022-10-10	chag	Sukkot
+2022-10-16	erev	Hoshana Raba
+2022-10-17	chag	Shmini Atzeret / Simchat Torah
+2023-04-05	erevPesach	Erev Pesach
+2023-04-06	chag	Pesach I
+2023-04-11	erev	Erev Shvi'i shel Pesach
+2023-04-12	chag	Shvi'i shel Pesach
+2023-05-25	erev	Erev Shavuot
+2023-05-26	chag	Shavuot
+2023-09-15	erev	Erev Rosh Hashana
+2023-09-16	chag	Rosh Hashana I
+2023-09-17	chag	Rosh Hashana II
+2023-09-24	erevYK	Erev Yom Kippur
+2023-09-25	YK	Yom Kippur
+2023-09-29	erev	Erev Sukkot
+2023-09-30	chag	Sukkot
+2023-10-06	erev	Hoshana Raba
+2023-10-07	chag	Shmini Atzeret / Simchat Torah
+2024-04-22	erevPesach	Erev Pesach
+2024-04-23	chag	Pesach I
+2024-04-28	erev	Erev Shvi'i shel Pesach
+2024-04-29	chag	Shvi'i shel Pesach
+2024-06-11	erev	Erev Shavuot
+2024-06-12	chag	Shavuot
+2024-10-02	erev	Erev Rosh Hashana
+2024-10-03	chag	Rosh Hashana I
+2024-10-04	chag	Rosh Hashana II
+2024-10-11	erevYK	Erev Yom Kippur
+2024-10-12	YK	Yom Kippur
+2024-10-16	erev	Erev Sukkot
+2024-10-17	chag	Sukkot
+2024-10-23	erev	Hoshana Raba
+2024-10-24	chag	Shmini Atzeret / Simchat Torah
+2025-04-12	erevPesach	Erev Pesach
+2025-04-13	chag	Pesach I
+2025-04-18	erev	Erev Shvi'i shel Pesach
+2025-04-19	chag	Shvi'i shel Pesach
+2025-06-01	erev	Erev Shavuot
+2025-06-02	chag	Shavuot
+2025-09-22	erev	Erev Rosh Hashana
+2025-09-23	chag	Rosh Hashana I
+2025-09-24	chag	Rosh Hashana II
+2025-10-01	erevYK	Erev Yom Kippur
+2025-10-02	YK	Yom Kippur
+2025-10-06	erev	Erev Sukkot
+2025-10-07	chag	Sukkot
+2025-10-13	erev	Hoshana Raba
+2025-10-14	chag	Shmini Atzeret / Simchat Torah
+2026-04-01	erevPesach	Erev Pesach
+2026-04-02	chag	Pesach I
+2026-04-07	erev	Erev Shvi'i shel Pesach
+2026-04-08	chag	Shvi'i shel Pesach
+2026-05-21	erev	Erev Shavuot
+2026-05-22	chag	Shavuot
+2026-09-11	erev	Erev Rosh Hashana
+2026-09-12	chag	Rosh Hashana I
+2026-09-13	chag	Rosh Hashana II
+2026-09-20	erevYK	Erev Yom Kippur
+2026-09-21	YK	Yom Kippur
+2026-09-25	erev	Erev Sukkot
+2026-09-26	chag	Sukkot
+2026-10-02	erev	Hoshana Raba
+2026-10-03	chag	Shmini Atzeret / Simchat Torah
+2027-04-21	erevPesach	Erev Pesach
+2027-04-22	chag	Pesach I
+2027-04-27	erev	Erev Shvi'i shel Pesach
+2027-04-28	chag	Shvi'i shel Pesach
+2027-06-10	erev	Erev Shavuot
+2027-06-11	chag	Shavuot
+2027-10-01	erev	Erev Rosh Hashana
+2027-10-02	chag	Rosh Hashana I
+2027-10-03	chag	Rosh Hashana II
+2027-10-10	erevYK	Erev Yom Kippur
+2027-10-11	YK	Yom Kippur
+2027-10-15	erev	Erev Sukkot
+2027-10-16	chag	Sukkot
+2027-10-22	erev	Hoshana Raba
+2027-10-23	chag	Shmini Atzeret / Simchat Torah
+2028-04-10	erevPesach	Erev Pesach
+2028-04-11	chag	Pesach I
+2028-04-16	erev	Erev Shvi'i shel Pesach
+2028-04-17	chag	Shvi'i shel Pesach
+2028-05-30	erev	Erev Shavuot
+2028-05-31	chag	Shavuot
+2028-09-20	erev	Erev Rosh Hashana
+2028-09-21	chag	Rosh Hashana I
+2028-09-22	chag	Rosh Hashana II
+2028-09-29	erevYK	Erev Yom Kippur
+2028-09-30	YK	Yom Kippur
+2028-10-04	erev	Erev Sukkot
+2028-10-05	chag	Sukkot
+2028-10-11	erev	Hoshana Raba
+2028-10-12	chag	Shmini Atzeret / Simchat Torah
+2029-03-30	erevPesach	Erev Pesach
+2029-03-31	chag	Pesach I
+2029-04-05	erev	Erev Shvi'i shel Pesach
+2029-04-06	chag	Shvi'i shel Pesach
+2029-05-19	erev	Erev Shavuot
+2029-05-20	chag	Shavuot
+2029-09-09	erev	Erev Rosh Hashana
+2029-09-10	chag	Rosh Hashana I
+2029-09-11	chag	Rosh Hashana II
+2029-09-18	erevYK	Erev Yom Kippur
+2029-09-19	YK	Yom Kippur
+2029-09-23	erev	Erev Sukkot
+2029-09-24	chag	Sukkot
+2029-09-30	erev	Hoshana Raba
+2029-10-01	chag	Shmini Atzeret / Simchat Torah
+2030-04-17	erevPesach	Erev Pesach
+2030-04-18	chag	Pesach I
+2030-04-23	erev	Erev Shvi'i shel Pesach
+2030-04-24	chag	Shvi'i shel Pesach
+2030-06-06	erev	Erev Shavuot
+2030-06-07	chag	Shavuot
+2030-09-27	erev	Erev Rosh Hashana
+2030-09-28	chag	Rosh Hashana I
+2030-09-29	chag	Rosh Hashana II
+2030-10-06	erevYK	Erev Yom Kippur
+2030-10-07	YK	Yom Kippur
+2030-10-11	erev	Erev Sukkot
+2030-10-12	chag	Sukkot
+2030-10-18	erev	Hoshana Raba
+2030-10-19	chag	Shmini Atzeret / Simchat Torah
+2031-04-07	erevPesach	Erev Pesach
+2031-04-08	chag	Pesach I
+2031-04-13	erev	Erev Shvi'i shel Pesach
+2031-04-14	chag	Shvi'i shel Pesach
+2031-05-27	erev	Erev Shavuot
+2031-05-28	chag	Shavuot
+2031-09-17	erev	Erev Rosh Hashana
+2031-09-18	chag	Rosh Hashana I
+2031-09-19	chag	Rosh Hashana II
+2031-09-26	erevYK	Erev Yom Kippur
+2031-09-27	YK	Yom Kippur
+2031-10-01	erev	Erev Sukkot
+2031-10-02	chag	Sukkot
+2031-10-08	erev	Hoshana Raba
+2031-10-09	chag	Shmini Atzeret / Simchat Torah
+2032-03-26	erevPesach	Erev Pesach
+2032-03-27	chag	Pesach I
+2032-04-01	erev	Erev Shvi'i shel Pesach
+2032-04-02	chag	Shvi'i shel Pesach
+2032-05-15	erev	Erev Shavuot
+2032-05-16	chag	Shavuot
+2032-09-05	erev	Erev Rosh Hashana
+2032-09-06	chag	Rosh Hashana I
+2032-09-07	chag	Rosh Hashana II
+2032-09-14	erevYK	Erev Yom Kippur
+2032-09-15	YK	Yom Kippur
+2032-09-19	erev	Erev Sukkot
+2032-09-20	chag	Sukkot
+2032-09-26	erev	Hoshana Raba
+2032-09-27	chag	Shmini Atzeret / Simchat Torah
+2033-04-13	erevPesach	Erev Pesach
+2033-04-14	chag	Pesach I
+2033-04-19	erev	Erev Shvi'i shel Pesach
+2033-04-20	chag	Shvi'i shel Pesach
+2033-06-02	erev	Erev Shavuot
+2033-06-03	chag	Shavuot
+2033-09-23	erev	Erev Rosh Hashana
+2033-09-24	chag	Rosh Hashana I
+2033-09-25	chag	Rosh Hashana II
+2033-10-02	erevYK	Erev Yom Kippur
+2033-10-03	YK	Yom Kippur
+2033-10-07	erev	Erev Sukkot
+2033-10-08	chag	Sukkot
+2033-10-14	erev	Hoshana Raba
+2033-10-15	chag	Shmini Atzeret / Simchat Torah
+2034-04-03	erevPesach	Erev Pesach
+2034-04-04	chag	Pesach I
+2034-04-09	erev	Erev Shvi'i shel Pesach
+2034-04-10	chag	Shvi'i shel Pesach
+2034-05-23	erev	Erev Shavuot
+2034-05-24	chag	Shavuot
+2034-09-13	erev	Erev Rosh Hashana
+2034-09-14	chag	Rosh Hashana I
+2034-09-15	chag	Rosh Hashana II
+2034-09-22	erevYK	Erev Yom Kippur
+2034-09-23	YK	Yom Kippur
+2034-09-27	erev	Erev Sukkot
+2034-09-28	chag	Sukkot
+2034-10-04	erev	Hoshana Raba
+2034-10-05	chag	Shmini Atzeret / Simchat Torah
+2035-04-23	erevPesach	Erev Pesach
+2035-04-24	chag	Pesach I
+2035-04-29	erev	Erev Shvi'i shel Pesach
+2035-04-30	chag	Shvi'i shel Pesach
+2035-06-12	erev	Erev Shavuot
+2035-06-13	chag	Shavuot
+2035-10-03	erev	Erev Rosh Hashana
+2035-10-04	chag	Rosh Hashana I
+2035-10-05	chag	Rosh Hashana II
+2035-10-12	erevYK	Erev Yom Kippur
+2035-10-13	YK	Yom Kippur
+2035-10-17	erev	Erev Sukkot
+2035-10-18	chag	Sukkot
+2035-10-24	erev	Hoshana Raba
+2035-10-25	chag	Shmini Atzeret / Simchat Torah
+2036-04-11	erevPesach	Erev Pesach
+2036-04-12	chag	Pesach I
+2036-04-17	erev	Erev Shvi'i shel Pesach
+2036-04-18	chag	Shvi'i shel Pesach
+2036-05-31	erev	Erev Shavuot
+2036-06-01	chag	Shavuot
+2036-09-21	erev	Erev Rosh Hashana
+2036-09-22	chag	Rosh Hashana I
+2036-09-23	chag	Rosh Hashana II
+2036-09-30	erevYK	Erev Yom Kippur
+2036-10-01	YK	Yom Kippur
+2036-10-05	erev	Erev Sukkot
+2036-10-06	chag	Sukkot
+2036-10-12	erev	Hoshana Raba
+2036-10-13	chag	Shmini Atzeret / Simchat Torah
+2037-03-30	erevPesach	Erev Pesach
+2037-03-31	chag	Pesach I
+2037-04-05	erev	Erev Shvi'i shel Pesach
+2037-04-06	chag	Shvi'i shel Pesach
+2037-05-19	erev	Erev Shavuot
+2037-05-20	chag	Shavuot
+2037-09-09	erev	Erev Rosh Hashana
+2037-09-10	chag	Rosh Hashana I
+2037-09-11	chag	Rosh Hashana II
+2037-09-18	erevYK	Erev Yom Kippur
+2037-09-19	YK	Yom Kippur
+2037-09-23	erev	Erev Sukkot
+2037-09-24	chag	Sukkot
+2037-09-30	erev	Hoshana Raba
+2037-10-01	chag	Shmini Atzeret / Simchat Torah
+2038-04-19	erevPesach	Erev Pesach
+2038-04-20	chag	Pesach I
+2038-04-25	erev	Erev Shvi'i shel Pesach
+2038-04-26	chag	Shvi'i shel Pesach
+2038-06-08	erev	Erev Shavuot
+2038-06-09	chag	Shavuot
+2038-09-29	erev	Erev Rosh Hashana
+2038-09-30	chag	Rosh Hashana I
+2038-10-01	chag	Rosh Hashana II
+2038-10-08	erevYK	Erev Yom Kippur
+2038-10-09	YK	Yom Kippur
+2038-10-13	erev	Erev Sukkot
+2038-10-14	chag	Sukkot
+2038-10-20	erev	Hoshana Raba
+2038-10-21	chag	Shmini Atzeret / Simchat Torah
+2039-04-08	erevPesach	Erev Pesach
+2039-04-09	chag	Pesach I
+2039-04-14	erev	Erev Shvi'i shel Pesach
+2039-04-15	chag	Shvi'i shel Pesach
+2039-05-28	erev	Erev Shavuot
+2039-05-29	chag	Shavuot
+2039-09-18	erev	Erev Rosh Hashana
+2039-09-19	chag	Rosh Hashana I
+2039-09-20	chag	Rosh Hashana II
+2039-09-27	erevYK	Erev Yom Kippur
+2039-09-28	YK	Yom Kippur
+2039-10-02	erev	Erev Sukkot
+2039-10-03	chag	Sukkot
+2039-10-09	erev	Hoshana Raba
+2039-10-10	chag	Shmini Atzeret / Simchat Torah
+2040-03-28	erevPesach	Erev Pesach
+2040-03-29	chag	Pesach I
+2040-04-03	erev	Erev Shvi'i shel Pesach
+2040-04-04	chag	Shvi'i shel Pesach
+2040-05-17	erev	Erev Shavuot
+2040-05-18	chag	Shavuot

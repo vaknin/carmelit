@@ -1,0 +1,63 @@
+package com.kivan.carmelit
+
+import java.time.Duration
+import java.time.LocalDate
+import java.time.ZonedDateTime
+
+/** One catchable train. [departure] is the published terminus time; the rest are derived. */
+data class Trip(
+    val departure: ZonedDateTime,
+    val boardAt: ZonedDateTime,
+    val leaveAt: ZonedDateTime,
+    val arriveAt: ZonedDateTime,
+    val dayType: DayType,
+)
+
+/** The answer for one direction: the next [Trip]s and the timetable of the first one's day. */
+data class Plan(
+    val from: Station,
+    val to: Station,
+    val trips: List<Trip>,
+    val serviceDay: LocalDate,
+    val dayType: DayType,
+    val isDst: Boolean,
+)
+
+private fun minutesToDuration(min: Double): Duration = Duration.ofSeconds(Math.round(min * 60))
+
+/**
+ * The next [count] trains the user can still catch when leaving at or after [now].
+ * Scans up to 8 days ahead; the longest possible closure is two consecutive rest days.
+ */
+fun nextTrips(now: ZonedDateTime, s: Settings, goingHome: Boolean, count: Int = 4): Plan {
+    val from = if (goingHome) s.work else s.home
+    val to = if (goingHome) s.home else s.work
+    val dir = Direction.between(from, to)
+    val walk = Duration.ofMinutes((if (goingHome) s.walkWorkMin else s.walkHomeMin).toLong())
+    val margin = Duration.ofMinutes(s.marginMin.toLong())
+    val boardOffset = (if (goingHome) s.fromWorkOffsetMin?.let(::minutesToDuration) else null)
+        ?: Duration.ofSeconds(defaultOffsetSeconds(from, dir).toLong())
+    val alightOffset = (if (!goingHome) s.toWorkOffsetMin?.let(::minutesToDuration) else null)
+        ?: Duration.ofSeconds(defaultOffsetSeconds(to, dir).toLong())
+
+    val trips = ArrayList<Trip>(count)
+    val today = now.withZoneSameInstant(ZONE).toLocalDate()
+    var firstDay: LocalDate? = null
+    var firstType = DayType.CLOSED
+    var firstDst = false
+    days@ for (i in 0L until 8L) {
+        val day = today.plusDays(i)
+        val type = classifyDay(day)
+        val dst = isDst(day)
+        for (t in departures(type, dst)) {
+            val dep = day.atTime(t).atZone(ZONE)
+            val board = dep.plus(boardOffset)
+            val leave = board.minus(walk).minus(margin)
+            if (leave < now) continue
+            if (firstDay == null) { firstDay = day; firstType = type; firstDst = dst }
+            trips += Trip(dep, board, leave, dep.plus(alightOffset), type)
+            if (trips.size >= count) break@days
+        }
+    }
+    return Plan(from, to, trips, firstDay ?: today, firstType, firstDst)
+}
