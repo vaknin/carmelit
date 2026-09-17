@@ -31,21 +31,39 @@ data class Plan(
 
 private fun minutesToDuration(min: Double): Duration = Duration.ofSeconds(Math.round(min * 60))
 
+/** The settings resolved for one direction: who walks how long, and the two station offsets. */
+data class Leg(
+    val from: Station,
+    val to: Station,
+    val walk: Duration,
+    val margin: Duration,
+    val boardOffset: Duration,
+    val alightOffset: Duration,
+) {
+    companion object {
+        fun of(s: Settings, goingHome: Boolean): Leg {
+            val from = if (goingHome) s.work else s.home
+            val to = if (goingHome) s.home else s.work
+            val dir = Direction.between(from, to)
+            return Leg(
+                from, to,
+                walk = Duration.ofMinutes((if (goingHome) s.walkWorkMin else s.walkHomeMin).toLong()),
+                margin = Duration.ofMinutes(s.marginMin.toLong()),
+                boardOffset = (if (goingHome) s.fromWorkOffsetMin?.let(::minutesToDuration) else null)
+                    ?: Duration.ofSeconds(defaultOffsetSeconds(from, dir).toLong()),
+                alightOffset = (if (!goingHome) s.toWorkOffsetMin?.let(::minutesToDuration) else null)
+                    ?: Duration.ofSeconds(defaultOffsetSeconds(to, dir).toLong()),
+            )
+        }
+    }
+}
+
 /**
  * The next [count] trains the user can still catch when leaving at or after [now].
  * Scans up to 8 days ahead; the longest possible closure is two consecutive rest days.
  */
 fun nextTrips(now: ZonedDateTime, s: Settings, goingHome: Boolean, count: Int = 4): Plan {
-    val from = if (goingHome) s.work else s.home
-    val to = if (goingHome) s.home else s.work
-    val dir = Direction.between(from, to)
-    val walk = Duration.ofMinutes((if (goingHome) s.walkWorkMin else s.walkHomeMin).toLong())
-    val margin = Duration.ofMinutes(s.marginMin.toLong())
-    val boardOffset = (if (goingHome) s.fromWorkOffsetMin?.let(::minutesToDuration) else null)
-        ?: Duration.ofSeconds(defaultOffsetSeconds(from, dir).toLong())
-    val alightOffset = (if (!goingHome) s.toWorkOffsetMin?.let(::minutesToDuration) else null)
-        ?: Duration.ofSeconds(defaultOffsetSeconds(to, dir).toLong())
-
+    val leg = Leg.of(s, goingHome)
     val trips = ArrayList<Trip>(count)
     val today = now.withZoneSameInstant(ZONE).toLocalDate()
     var firstDay: LocalDate? = null
@@ -59,10 +77,11 @@ fun nextTrips(now: ZonedDateTime, s: Settings, goingHome: Boolean, count: Int = 
         val dst = isDst(day)
         if (i == 0L) todayType = type
         for (t in departures(type, dst)) {
-            val dep = day.atTime(t).atZone(ZONE)
-            val board = dep.plus(boardOffset)
-            val leave = board.minus(walk).minus(margin)
-            val trip = Trip(dep, board, leave, dep.plus(alightOffset), type)
+            // Local-time arithmetic, so DST days are right and 1440 lands on the next day's 00:00.
+            val dep = day.atStartOfDay().plusMinutes(t.toLong()).atZone(ZONE)
+            val board = dep.plus(leg.boardOffset)
+            val leave = board.minus(leg.walk).minus(leg.margin)
+            val trip = Trip(dep, board, leave, dep.plus(leg.alightOffset), type)
             if (leave < now) {
                 if (i == 0L) missedLast = trip
                 continue
@@ -74,5 +93,5 @@ fun nextTrips(now: ZonedDateTime, s: Settings, goingHome: Boolean, count: Int = 
     }
     // Only meaningful when today still had trains but none is catchable any more.
     if (firstDay == today) missedLast = null
-    return Plan(from, to, trips, firstDay ?: today, firstType, firstDst, todayType, missedLast)
+    return Plan(leg.from, leg.to, trips, firstDay ?: today, firstType, firstDst, todayType, missedLast)
 }

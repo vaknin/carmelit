@@ -85,6 +85,7 @@ fun MainScreen(
     goingHome: Boolean,
     onSetGoingHome: (Boolean) -> Unit,
     onOpenSettings: () -> Unit,
+    timer: @Composable () -> Unit = {},
 ) {
     val today = now.toLocalDate()
     Column(
@@ -116,7 +117,9 @@ fun MainScreen(
                 ServiceNotice(plan, today)
             }
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
+        timer()
+        Spacer(Modifier.height(12.dp))
         Footer(plan)
     }
 }

@@ -3,6 +3,36 @@
 Spec: `IDEA.md`. Reference calendar: `hebcal.js`. Build/run: `README.md`.
 Keep this file current: one dated entry per work session, plus the living sections below.
 
+## Session 2026-09-17 (later) — closing trains, Yom Kippur dropped, six-tap trip timer
+
+- Re-checked the official page (unchanged) and compared with the Ministry of Transport GTFS feed;
+  findings in IDEA.md "Accuracy ideas". Departure minutes match; the feed's per-station times are
+  filler, so stop offsets can only come from our own measurements.
+- **Closing-time trains added** (24:00, 15:00 Friday, 14:00 erev Pesach) — see Decisions.
+- **Yom Kippur no longer modelled** (owner's call): `DayType.EREV_YK` / `YOM_KIPPUR` removed; YK
+  is an ordinary rest day. On 2026-09-20 the app will wrongly show trains 13:00–15:00 and on
+  09-21 a 20:00 start instead of 21:00. Accepted.
+- **Trip timer built** (`Runs.kt`, `ui/TimerBar.kt`, measured lines + report in Settings). Six
+  taps in both directions (incl. "doors open" at the terminus, since a later fix), Undo/Skip/Finish, run
+  survives process death, Discard after saving. Algorithm and rationale: IDEA.md A2/A3.
+  `Leg` extracted from `nextTrips` so the planner and the run matcher share the offsets.
+- 39 JVM tests pass (10 new in `RunsTest`). Installed on the Pixel 8 and screenshot-verified:
+  idle button, running state, run surviving a force-stop, "Saved: …" line with Discard, and the
+  Measured line + report in Settings. The fake test run showed the matcher accepting doors that
+  "closed" 4 min before a departure; the window is now −2…+6 min. A second pass with fake
+  runs then verified on device: the to-home flow incl. "Doors open" and Undo back to it, a run
+  surviving screen lock + force-stop, a matched train (16:12, doors +3:19 → stored departure and
+  advice correct), "no train matched" for taps between two trains' windows, early Finish, the
+  Calibration measured line ("Use 3"), and the report wording ("… after the published
+  departure" when the lead is negative). All fake runs discarded; run store left empty.
+  A third pass ran the full to-work flow (platform → doors closed → arrived → at work, "Doors
+  open" hidden, auto-save on the last tap, matched the 16:24 with doors −1:43, advice 16:02) and
+  pressed **Use** (field filled, saved to prefs; then restored to 22). A fourth pass, after un-hiding "Doors
+  open" at the terminus (owner asked why it was hidden; the reason was an untested assumption):
+  all six labels seen going to work, auto-save, 16:24 matched, "Doors open 1:21 after" line in
+  the report. A forgotten run is now discarded after 3 h instead of saved (owner's call);
+  verified by planting a 4 h old active run (gone, nothing saved) and a 10 min old one (kept).
+
 ## Session 2026-09-17 — two "To home" bugs found in the field
 
 Standing at HaNevi'im at ~08:51 in "To home" mode, the app said *Leave in 7 min · at 08:58* over a
@@ -49,9 +79,11 @@ Everything in IDEA.md except the home-screen widget is implemented. 30 JVM unit 
 
 ## Decisions made (and why)
 
-- **Closing-time train excluded.** Windows are half-open `[start, end)`, so the last guaranteed
-  trains are 23:45 (weekday), 14:48 (Friday), 12:48 (erev YK), 13:48 (erev Pesach). The site
-  does not say whether the 15:00 / 24:00 train runs. Change `Timetable.kt` if it does.
+- **Closing-time train included** (changed 2026-09-17; it was excluded before). Windows are closed
+  at the end, so the last trains are 24:00 (weekday, motzei), 15:00 (Friday), 14:00 (erev Pesach). The site does not mention them, but the Ministry of Transport
+  GTFS feed of 2026-09-16 lists 15:00, 13:00 and the 24:00 (as 00:00 on Sun–Fri); 14:00 erev
+  Pesach is by analogy. `departures()` now returns minutes of the service day (1440 = 24:00) since
+  `LocalTime` cannot hold 24:00. Still unconfirmed by eye: check once that a 24:00 train leaves.
 - **DST from the real zone rules**, evaluated at noon of the service day, not the site's
   "April–October" wording. The two differ in late March and late October; the Carmelit's own
   practice there is unknown.
@@ -60,7 +92,7 @@ Everything in IDEA.md except the home-screen widget is implemented. 30 JVM unit 
   from Ir Tahtit (≈3 min). One number cannot serve both. Both fields are optional and show the
   table default in their label. Home station always uses the table.
 - **Rest-day rules** as in IDEA.md: rest day = Shabbat, chag, or Yom Kippur. Rest day followed by
-  a rest day → closed; otherwise motzei evening service. Erev YK / erev Pesach windows win even on
+  a rest day → closed; otherwise motzei evening service. The erev Pesach window wins even on
   a Friday. Chol hamoed, Purim, Independence Day are ordinary days.
 - **SharedPreferences, not DataStore**; no navigation library; no dependencies beyond core-ktx,
   activity-compose, Compose UI/Material3 and JUnit. Zero permissions in the manifest.
@@ -104,8 +136,8 @@ closed Shabbat → Sunday evening · margin · going home · both offset overrid
    the morning arrival at HaNevi'im (3 stops down, ~6.5 min) is still extrapolated from it. Note the
    minute the doors open after a known Merkaz HaCarmel departure and, if it differs, enter it in
    Settings → Calibration → "To work".
-2. **Does the closing-time train run?** If the 15:00 Friday or 24:00 train exists, make the
-   windows closed at the end in `Timetable.kt` (one-line change) and update `TimetableTest`.
+2. ~~Does the closing-time train run?~~ — included since 2026-09-17 on GTFS evidence; confirm on
+   the platform once. (Yom Kippur is no longer modelled at all.)
 3. **Late March / late October motzei start.** Check what the Carmelit does in the gap between
    real DST and the site's "April–October"; adjust `isDst` if it follows the calendar months.
 4. **Widget** ("Leave in N min" on the home screen). Would need Glance or a RemoteViews

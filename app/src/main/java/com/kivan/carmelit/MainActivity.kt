@@ -16,8 +16,11 @@ import androidx.compose.runtime.setValue
 import com.kivan.carmelit.ui.CarmelitTheme
 import com.kivan.carmelit.ui.MainScreen
 import com.kivan.carmelit.ui.SettingsScreen
+import com.kivan.carmelit.ui.TimerBar
 import kotlinx.coroutines.delay
 import java.time.ZonedDateTime
+
+private const val STALE_RUN_SEC = 3 * 3600L
 
 class MainActivity : ComponentActivity() {
     /** Bumped on every resume so the clock refreshes the moment the app comes back. */
@@ -27,8 +30,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(SystemBarStyle.dark(android.graphics.Color.TRANSPARENT), SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
         val store = SettingsStore(this)
+        val runStore = RunStore(this)
         setContent {
-            CarmelitTheme { App(store, resumeTick) }
+            CarmelitTheme { App(store, runStore, resumeTick) }
         }
     }
 
@@ -39,10 +43,30 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun App(store: SettingsStore, resumeTick: Int) {
+private fun App(store: SettingsStore, runStore: RunStore, resumeTick: Int) {
     var settings by remember { mutableStateOf(store.load()) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var goingHome by rememberSaveable { mutableStateOf(false) }
+    var runs by remember { mutableStateOf(runStore.all()) }
+    var activeRun by remember { mutableStateOf(runStore.active()) }
+    var lastRun by remember { mutableStateOf<Run?>(null) }
+
+    fun setActive(run: Run?) { activeRun = run; runStore.saveActive(run) }
+    fun finish(run: Run) {
+        val finished = run.finished(settings)
+        runs = runs + finished
+        runStore.saveAll(runs)
+        lastRun = finished
+        setActive(null)
+    }
+    // A run nobody finished (phone died, forgot): thrown away, since its late taps cannot be trusted.
+    LaunchedEffect(resumeTick) {
+        activeRun?.let { r ->
+            val start = r[Step.LEAVE] ?: 0
+            if (System.currentTimeMillis() / 1000 - start > STALE_RUN_SEC) setActive(null)
+        }
+    }
+
     var now by remember { mutableStateOf(ZonedDateTime.now(ZONE)) }
 
     LaunchedEffect(resumeTick) {
@@ -53,7 +77,7 @@ private fun App(store: SettingsStore, resumeTick: Int) {
     }
 
     if (showSettings) {
-        SettingsScreen(settings) { updated ->
+        SettingsScreen(settings, runs) { updated ->
             settings = updated
             store.save(updated)
             showSettings = false
@@ -66,6 +90,26 @@ private fun App(store: SettingsStore, resumeTick: Int) {
             goingHome = goingHome,
             onSetGoingHome = { goingHome = it },
             onOpenSettings = { showSettings = true },
+            timer = {
+                TimerBar(
+                    active = activeRun,
+                    last = lastRun,
+                    goingHome = goingHome,
+                    onStart = {
+                        val leg = Leg.of(settings, goingHome)
+                        lastRun = null
+                        setActive(Run(goingHome, leg.from, leg.to).tap(System.currentTimeMillis() / 1000))
+                    },
+                    onChange = { if (it.done) finish(it) else setActive(it) },
+                    onFinish = { activeRun?.let(::finish) },
+                    onDiscardActive = { setActive(null) },
+                    onDiscardLast = {
+                        runs = runs.filterNot { it === lastRun }
+                        runStore.saveAll(runs)
+                        lastRun = null
+                    },
+                )
+            },
         )
     }
 }

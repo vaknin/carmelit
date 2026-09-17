@@ -19,18 +19,17 @@ private fun isRestDay(date: LocalDate): Boolean {
 
 /**
  * Which timetable runs on [date] (IDEA.md "Day classification rules"):
- *  - Yom Kippur: 21:00–24:00 (also when it is a Shabbat).
  *  - A rest day followed by another rest day: closed; otherwise evening (motzei) service only.
- *  - Erev Yom Kippur / erev Pesach: their own shorter windows, even on a Friday.
+ *  - Erev Pesach: its own shorter window, even on a Friday.
+ *  - Yom Kippur has no timetable of its own (owner's call, 2026-09-17): it is just another chag,
+ *    so the real 13:00 close the day before and the 21:00 start that night are not modelled.
  *  - The day before a rest day (a plain Friday, or erev chag on any weekday): Friday hours.
  *  - Everything else (including chol hamoed, Purim, Independence Day): weekday.
  */
 fun classifyDay(date: LocalDate): DayType {
     val kind = HebrewCalendar.holidayOn(date)?.kind
-    if (kind == HolidayKind.YK) return DayType.YOM_KIPPUR
     val nextIsRest = isRestDay(date.plusDays(1))
     if (isRestDay(date)) return if (nextIsRest) DayType.CLOSED else DayType.MOTZEI
-    if (kind == HolidayKind.EREV_YK) return DayType.EREV_YK
     if (kind == HolidayKind.EREV_PESACH) return DayType.EREV_PESACH
     if (nextIsRest) return DayType.FRIDAY
     return DayType.WEEKDAY

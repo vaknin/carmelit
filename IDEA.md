@@ -45,13 +45,12 @@ Trains leave **both termini (עיר תחתית and מרכז הכרמל) at the s
 | Sun–Thu | 06:00–07:00 every 15 min (06:00, 06:15, 06:30, 06:45); 07:00–22:00 every 12 min (07:00, 07:12, 07:24 …); 22:00–24:00 every 15 min (22:00, 22:15 …) |
 | Friday & erev chag | 06:00–07:00 every 15 min; 07:00–15:00 every 12 min |
 | Motzei Shabbat & motzei chag | summer time (DST): 20:00–24:00 every 15 min; winter time: 19:00–24:00 every 15 min |
-| Erev Yom Kippur | 06:00–13:00 (same 15/12 pattern) |
-| Yom Kippur (night) | 21:00–24:00 |
+| ~~Erev Yom Kippur 06:00–13:00, Yom Kippur night 21:00–24:00~~ | **not modelled** (owner, 2026-09-17: once a year, don't care). The app treats YK as a plain chag: Friday hours the day before, motzei service that night |
 | Erev Pesach | 06:00–14:00 |
 
 Notes:
 - Every boundary lands exactly on a departure (07:00 + 12·75 = 22:00, 22:00 + 15·8 = 24:00, 07:00 + 12·40 = 15:00).
-  Whether the closing-time train (15:00 / 24:00) actually runs is not stated; treat the one before it as the last guaranteed one.
+  The site does not say whether the closing-time train (15:00 / 24:00) runs, but the GTFS feed lists it (see "Accuracy ideas"), so the app includes it since 2026-09-17.
 - The site says both "April–October / November–March" and "שעון קיץ / שעון חורף" for the Shabbat start. Use real Israeli DST (Asia/Jerusalem offset +3 = summer); note the mismatch in late March / late October.
 - Ticket prices are only published as an image; irrelevant for the app.
 
@@ -63,8 +62,8 @@ Sukkot day 1, Shmini Atzeret/Simchat Torah, Pesach day 1, Pesach day 7, Shavuot.
 
 - Rest day whose next day is also a rest day → **no service at all** (e.g. Rosh Hashana I 2026 = Saturday, day II = Sunday → Saturday closed).
 - Rest day whose next day is normal → evening service only (motzei schedule).
-- Yom Kippur → 21:00–24:00 (YK never falls on Fri/Sun, so no conflict).
-- Day before a rest day (erev chag, or a plain Friday) → Friday hours. Erev Yom Kippur / Erev Pesach have their own shorter windows.
+- Yom Kippur → no special case since 2026-09-17; it is an ordinary rest day.
+- Day before a rest day (erev chag, or a plain Friday) → Friday hours. Erev Pesach has its own shorter window.
 - Otherwise → weekday.
 
 `hebcal.js` in this folder is a tested reference implementation of the Hebrew-calendar
@@ -171,3 +170,112 @@ To work · 3 stops, default 6.5   [    ]     Reset button when set
 From work · 2 stops, default 5   [    ]
 v0.2 · timetable from carmelithaifa.co.il
 ```
+
+## Accuracy ideas (2026-09-17) — not built yet
+
+### A. Trip timer ("stopwatch my commute")
+
+What it measures: the walk time (today a hand-typed guess, and the biggest error in the chain —
+the leave time is `train − walk − margin`, so a walk that is 2 min off makes everything 2 min off)
+and, with one more tap, the ride offset to HaNevi'im (the only other non-exact number).
+
+Flow, one button on the main screen that changes label as it goes:
+
+```
+[ Leaving now ]  →  [ At the platform ]  →  [ Doors open at destination ]  →  saved
+   tap at the door      walk time = t2 − t1      ride offset = t3 − published departure
+```
+
+- The third tap is optional (long-press / "skip" ends after the walk). The published departure
+  it refers to is the first train boardable at or after t2, which the app already knows.
+- Store every sample (direction, date, walk seconds, offset seconds) in SharedPreferences.
+  Settings shows "measured: 21:40 median of 5 (19:50–23:10)" next to each field with a
+  **Use** button; never overwrite the user's number silently.
+- Suggest the **median** for display but make it easy to pick a slower value: for catching a
+  train the right number is a pessimistic one (e.g. the 2nd slowest), not the average.
+  The spread also tells what safety margin is honest.
+- The timer must survive the app being killed: store the start instant, not a running counter.
+  No service, no notification needed.
+
+**Timer, not GPS.** GPS would need location permission (the app has zero permissions), a
+foreground service to keep tracking with the screen off, and does not work underground at the
+platform — which is exactly the point being measured. Two taps are more accurate than a geofence
+and cost ~50 lines. GPS rejected unless tapping proves too annoying.
+
+### B. External data — researched 2026-09-17
+
+Moovit, Google Maps etc. do not track the Carmelit by GPS; they all replay the Ministry of
+Transport GTFS feed (`https://gtfs.mot.gov.il/gtfsfiles/israel-public-transportation.zip`,
+needs a browser User-Agent; agency_id 20, routes 19087 down / 19088 up). Pulled the feed dated
+2026-09-16 and compared:
+
+- **Departure minutes: identical to the app** in every window (weekday, Friday, motzei Shabbat
+  20:00 every 15, erev Yom Kippur). Second independent confirmation of the timetable.
+- **Intermediate stops: useless.** The feed puts the 4 middle stations at +0:31, +0:59, +1:04,
+  +1:33 and the far terminus at +12:00 — interpolated filler, not measurements. This is why
+  Moovit's per-station times are wrong, and it means no online source has real stop offsets.
+  Only idea A (or a stopwatch on a ride) can produce them.
+- **Closing-time trains exist in the feed**: 15:00 on Fridays, 13:00 on erev Yom Kippur, and a
+  00:00 trip on Sun–Fri (= the 24:00 train of Sat-night–Thu; none on Saturday 00:00, matching
+  Friday's 15:00 close). The app currently excludes them. Evidence, not proof; keeping them
+  excluded is still the safe side. **Decided 2026-09-17: included.**
+- **Yom Kippur night differs**: feed has 21:00, 21:12, 21:24, 21:36, 21:48 then 22:00 every 15;
+  the app assumes every 15 from 21:00 (the site gives no frequency). Only 21:00 and 22:00 onward
+  appear in both. Affects Mon 2026-09-21.
+- Sukkot and Simchat Torah 2026 both fall on Shabbat, so the feed says nothing new about how
+  chag days are handled. No real-time (SIRI) data exists for the Carmelit.
+
+Possible follow-up: a small script in the repo that downloads the feed and diffs agency 20's
+departures against `Timetable.kt`, run by hand now and then, to catch timetable changes.
+
+### A2. Six-tap version (owner's proposal, 2026-09-17) — supersedes the 3-tap flow above
+
+| # | Tap when | Gives | Verdict |
+|---|---|---|---|
+| 1 | leaving home | start of walk | essential |
+| 2 | on the platform, ticket bought | **walk time** = t2 − t1 | essential |
+| 3 | doors open | mid-line: **boarding offset** = t3 − published departure (replaces the single 5 min measurement). At a terminus: how long before its departure the train is there to board (negative offset); Skip if it is already standing open | keep in both directions (2026-09-17: first built hidden at termini on an untested assumption; the owner had said all six, so it is shown. It never anchors the train match at a terminus) |
+| 4 | doors close | the **real deadline**. t4 − published departure at the terminus = how late the train really leaves (the "~2 min lag" guess); t4 − t3 mid-line = dwell, i.e. how many seconds of slack exist after the train shows up | essential — the most valuable tap after 1 and 2 |
+| 5 | doors open at destination | **arrival offset** = t5 − published departure; ride = t5 − t4 | essential |
+| 6 | at the work door | last leg = t6 − t5. Not used for "when to leave", but gives true door-to-door time and enables a later "arrive by HH:MM" mode; reversed, it seeds the work → station walk | keep, optional |
+
+Nothing is truly redundant; tap 3 is the only one that is sometimes empty. Rules that keep six
+taps bearable:
+
+- One big button whose label names the *next* event; every step has **Skip**, and the run can be
+  ended at any step. A run with only taps 1–2 is still a valid walk sample.
+- **Undo** (go back one step) for a mis-tap; a sample is only saved at the end or on "Finish".
+- Taps 3 and 4 are seconds apart mid-line and the phone is in hand anyway.
+- The train a run belongs to = the departure whose predicted door-close is nearest to t4 (t3/t5
+  as fallback). Store it with the sample so offsets are always relative to a published minute.
+- Same six steps mirrored for the way home (leave work → platform → open → close → arrive →
+  home door).
+- Works offline and underground; start instant persisted so a killed app resumes the run.
+- After ≥3 samples Settings offers measured values (median, and the slow-side value) with **Use**.
+
+### A3. Leaving at varying times — how the data stays honest (built 2026-09-17)
+
+The owner rarely leaves at exactly the advised minute (often 3–5 min early, sometimes late), and
+rides both ways. So nothing the timer learns may depend on the app's advice:
+
+1. **The train is identified from the taps, not from the advice.** On finish, the run is matched
+   to the published departure whose predicted time is nearest to "doors closed" (fallbacks: doors
+   open, arrival). Trains are ≥12 min apart and the prediction is good to ~2 min, so the match is
+   unambiguous; more than 6 min after or 2 min before any train's predicted time = "no train matched" (disruption) and the run only
+   contributes its walk. Yesterday's 24:00 train is considered too.
+2. **Parameters vs outcomes.** Walk (t2−t1), boarding offset (t3−dep), door-close offset
+   (t4−dep), arrival offset (t5−dep) and last leg (t6−t5) are properties of the route — identical
+   whether you left early or late. Platform wait (t4−t2) and "left N min before the advice"
+   (advice−t1) are *outcomes* of when you left; they are stored and shown but never fed back.
+3. **One number that judges the app:** `neededLead = dep − (t4 − walk)`, i.e. how long before the
+   published departure you had to leave to just make the doors on that run. It is the same
+   whenever you really left, so runs with 12 min of slack and runs with 1 min are comparable.
+   Settings shows it next to what the app currently advises (`walk + margin − boardOffset`).
+4. **Plan for the bad end, not the average.** Median is displayed, but the **Use** buttons take
+   the 80th-percentile walk (max under 5 runs, rounded up) and the *earliest* observed boarding
+   offset going home (rounded down to 0.5). Arrival offset uses the median — it only affects a
+   displayed time. Known bias: a run with lots of slack is walked slower, a tight one faster;
+   the slow-end choice errs safe, and `neededLead` high end is the cross-check.
+5. **Nothing is applied silently**, runs are kept raw (six timestamps + matched train + advice at
+   the time, last 200, own prefs file) so any better statistic can be computed later. Runs count
+   only for the station pair currently set, per direction. A forgotten run is discarded (not saved) 3 h after its first tap.
