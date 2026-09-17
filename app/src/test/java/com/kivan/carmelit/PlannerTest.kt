@@ -15,7 +15,7 @@ class PlannerTest {
         assertEquals(at("2026-09-16T08:12"), t.departure)
         assertEquals(at("2026-09-16T08:12"), t.boardAt)
         assertEquals(at("2026-09-16T07:50"), t.leaveAt)
-        assertEquals(at("2026-09-16T08:17"), t.arriveAt)
+        assertEquals(at("2026-09-16T08:18:30"), t.arriveAt)
         assertEquals(DayType.WEEKDAY, t.dayType)
         assertEquals(at("2026-09-16T08:24"), p.trips[1].departure)
         assertEquals(at("2026-09-16T08:02"), p.trips[1].leaveAt)
@@ -84,9 +84,24 @@ class PlannerTest {
         val t = p.trips[0]
         assertEquals(Station.HANEVIIM, p.from)
         assertEquals(at("2026-09-16T17:00"), t.departure)
-        assertEquals(at("2026-09-16T17:03"), t.boardAt)
-        assertEquals(at("2026-09-16T16:58"), t.leaveAt)
-        assertEquals(at("2026-09-16T17:08"), t.arriveAt)
+        // 2 stops up from Ir Tahtit = 5 min (measured), so boarding is not the published minute.
+        assertEquals(at("2026-09-16T17:05"), t.boardAt)
+        assertEquals(at("2026-09-16T17:00"), t.leaveAt)
+        assertEquals(at("2026-09-16T17:09:30"), t.arriveAt)
+    }
+
+    /**
+     * The 2026-09-17 field report: standing at HaNevi'im at 08:51 going home, the app offered a
+     * leave time only 2 min before the "train" it named, because it named the Ir Tahtit departure
+     * instead of the boarding time. The walk must sit between leaveAt and boardAt, not departure.
+     */
+    @Test fun goingHomeLeaveTimeIsOneWalkBeforeBoarding() {
+        val s = Settings(walkWorkMin = 5)
+        val t = nextTrips(at("2026-09-17T08:51"), s, goingHome = true).trips[0]
+        assertEquals(at("2026-09-17T09:00"), t.departure)
+        assertEquals(at("2026-09-17T09:05"), t.boardAt)
+        assertEquals(at("2026-09-17T09:00"), t.leaveAt)
+        assertEquals(5L, java.time.Duration.between(t.leaveAt, t.boardAt).toMinutes())
     }
 
     @Test fun offsetOverrides() {

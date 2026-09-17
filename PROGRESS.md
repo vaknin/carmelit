@@ -3,6 +3,30 @@
 Spec: `IDEA.md`. Reference calendar: `hebcal.js`. Build/run: `README.md`.
 Keep this file current: one dated entry per work session, plus the living sections below.
 
+## Session 2026-09-17 — two "To home" bugs found in the field
+
+Standing at HaNevi'im at ~08:51 in "To home" mode, the app said *Leave in 7 min · at 08:58* over a
+card reading `09:00 → ~09:08`, and `leave 09:10 · train 09:12` in the Later list. A 2 min gap
+between leaving and the train, with a 5 min walk configured. Two independent bugs:
+
+1. **The screen showed the wrong station's time.** The trip card and the Later list printed
+   `Trip.departure` (the minute the train leaves the *far* terminus, Ir Tahtit) while the leave
+   time is derived from `Trip.boardAt` (departure + the stop offset). The 5 min walk *was* being
+   applied, to an 09:03 that was never shown. Invisible in the morning, where home is the terminus
+   and `boardAt == departure`. Fixed: `Trip.boardLabel()` in `MainScreen.kt` prints the time at
+   *your* station — exact at a terminus, `~HH:MM` elsewhere — and is used by the trip card, the
+   Later list and the "last train today" notice. The Later column header is now `board`, not
+   `train`, so the row reads leave → board → arrive.
+2. **The 2-stop offset was too short.** Observed: the 08:48 and 09:00 trains from Ir Tahtit were at
+   HaNevi'im ~08:53 and ~09:04, ~5 min rather than the estimated 3. Whether the ride is slower than
+   the 8 min end-to-end figure or the cars just leave the terminus late, the fix is the same.
+   `OFFSET_SECONDS` is now `0, 210, 300, 390, 480, 570` (a ~2 min terminus lag + 1.5 min/stop,
+   exact at the one measured point), replacing `0, 90, 180, 300, 390, 480`.
+
+The timetable itself was never wrong: the 12 min headway and the window boundaries matched what
+was on the platform. 29 JVM tests pass with the updated expectations (morning arrival at
+HaNevi'im 08:12 → 08:18:30; evening boarding 17:00 → 17:05).
+
 ## Status (2026-09-16)
 
 **v0.2: UI redesign built and installed on the Pixel 8** (design in IDEA.md "UI design (v0.2)").
@@ -21,7 +45,7 @@ Everything in IDEA.md except the home-screen widget is implemented. 30 JVM unit 
 | Settings screen (`ui/SettingsScreen.kt`) | done; v0.2: sections, station dialogs, "min" fields with validation, collapsible calibration with Reset |
 | Direction switch ("To work / To home") | done |
 | Home-screen widget | **not started** (nice-to-have) |
-| Calibration of the ~5 min HaNevi'im offset from a real ride | **not done** (needs a ride) |
+| Calibration of the HaNevi'im offset from a real ride | evening (2 stops up = 5 min) measured 2026-09-17; morning still extrapolated |
 
 ## Decisions made (and why)
 
@@ -54,6 +78,8 @@ Everything in IDEA.md except the home-screen widget is implemented. 30 JVM unit 
 - Headline "Leave in 7 min · at 23:23" for the 23:45 train, ~23:50 at HaNevi'im; "then" list rolls
   over to Thursday 06:00 / 06:15 / 06:30; the number ticks down.
 - Going home: 23:30 train boards at HaNevi'im 23:33, leave 23:28 (5 min walk), arrive 23:38.
+  *(Superseded 2026-09-17: the same train now boards ~23:35, leave 23:30, arrive ~23:39:30,
+  and the card shows the boarding time instead of the 23:30 terminus departure.)*
 - Settings: margin 3 saved via back-press, app force-stopped and relaunched, leave time moved
   23:23 → 23:20. Margin reset to 0 afterwards.
 - No crashes in logcat.
@@ -74,8 +100,10 @@ closed Shabbat → Sunday evening · margin · going home · both offset overrid
 
 ## Open questions / next steps
 
-1. **Ride once and calibrate.** Note the minute the train actually reaches HaNevi'im after a
-   known terminus departure; enter it in Settings → "To work". Same for the evening boarding time.
+1. **Time a morning ride.** The evening leg is now measured (2 stops up = 5 min, 2026-09-17), but
+   the morning arrival at HaNevi'im (3 stops down, ~6.5 min) is still extrapolated from it. Note the
+   minute the doors open after a known Merkaz HaCarmel departure and, if it differs, enter it in
+   Settings → Calibration → "To work".
 2. **Does the closing-time train run?** If the 15:00 Friday or 24:00 train exists, make the
    windows closed at the end in `Timetable.kt` (one-line change) and update `TimetableTest`.
 3. **Late March / late October motzei start.** Check what the Carmelit does in the gap between

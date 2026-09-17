@@ -22,11 +22,17 @@ enum class Direction(val origin: Station) {
 }
 
 /**
- * Working estimate of seconds after terminus departure until the train reaches a station,
- * indexed by number of stops travelled (IDEA.md: 0, 1.5, 3, 5, 6.5, 8 minutes).
- * Same table in both directions.
+ * Estimated seconds after the published terminus departure until the train reaches a station,
+ * indexed by number of stops travelled: 0, 3.5, 5, 6.5, 8, 9.5 minutes.
+ *
+ * Measured 2026-09-17 at HaNevi'im going up: the 08:48 and 09:00 trains from Ir Tahtit arrived
+ * ~08:53 and ~09:04, i.e. ~5 min for 2 stops, not the 3 min first estimated from the 8 min
+ * end-to-end run. The table therefore models a ~2 min lag between the published minute and the
+ * train actually moving, plus 1.5 min per stop. Index 0 stays 0: at a terminus the published
+ * minute is when you have to be on the platform, whenever the doors finally close.
+ * Same table in both directions; override per direction in Settings if a ride says otherwise.
  */
-val OFFSET_SECONDS = intArrayOf(0, 90, 180, 300, 390, 480)
+val OFFSET_SECONDS = intArrayOf(0, 210, 300, 390, 480, 570)
 
 fun stopsFromOrigin(station: Station, direction: Direction): Int =
     if (direction == Direction.UP) station.index else Station.MERKAZ_HACARMEL.index - station.index

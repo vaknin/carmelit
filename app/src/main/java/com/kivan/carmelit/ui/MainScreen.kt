@@ -58,6 +58,13 @@ private val HHMM: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 private fun ZonedDateTime.hhmm(): String = format(HHMM)
 private fun ZonedDateTime.hhmmRounded(): String = plusSeconds(30).format(HHMM)
 
+/**
+ * When the train is at *your* station, which is what the walk is measured against. Exact at a
+ * terminus (the published departure); a "~" estimate at any other station.
+ */
+private fun Trip.boardLabel(): String =
+    if (boardAt == departure) boardAt.hhmm() else "~" + boardAt.hhmmRounded()
+
 /** "tomorrow" / "Sunday" relative to [today]; empty for today. */
 private fun dayLabel(date: LocalDate, today: LocalDate, capitalized: Boolean = false): String {
     val s = when (ChronoUnit.DAYS.between(today, date)) {
@@ -205,7 +212,7 @@ private fun TripCard(trip: Trip, from: Station, to: Station) {
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
             verticalAlignment = Alignment.Top,
         ) {
-            StationColumn(trip.departure.hhmm(), from, Alignment.Start, Modifier.weight(1f))
+            StationColumn(trip.boardLabel(), from, Alignment.Start, Modifier.weight(1f))
             Text(
                 "→",
                 style = MaterialTheme.typography.titleLarge,
@@ -233,7 +240,7 @@ private fun StationColumn(time: String, station: Station, align: Alignment.Horiz
 private fun LaterList(trips: List<Trip>, today: LocalDate) {
     Text("LATER", style = eyebrow(), color = dim())
     Spacer(Modifier.height(8.dp))
-    ThreeColumns("leave", "train", "arrive", MaterialTheme.typography.labelMedium, dim())
+    ThreeColumns("leave", "board", "arrive", MaterialTheme.typography.labelMedium, dim())
     var previousDay = trips[0].leaveAt.toLocalDate()
     for (trip in trips.drop(1)) {
         val day = trip.leaveAt.toLocalDate()
@@ -244,7 +251,7 @@ private fun LaterList(trips: List<Trip>, today: LocalDate) {
         }
         Spacer(Modifier.height(6.dp))
         ThreeColumns(
-            trip.leaveAt.hhmm(), trip.departure.hhmm(), "~" + trip.arriveAt.hhmmRounded(),
+            trip.leaveAt.hhmm(), trip.boardLabel(), "~" + trip.arriveAt.hhmmRounded(),
             MaterialTheme.typography.bodyLarge.merge(Tabular), MaterialTheme.colorScheme.onSurface,
         )
     }
@@ -267,7 +274,7 @@ private fun ServiceNotice(plan: Plan, today: LocalDate) {
         plan.todayType == DayType.CLOSED ->
             "No service today (" + (if (today.dayOfWeek == DayOfWeek.SATURDAY) "Shabbat" else "holiday") + ")"
         plan.missedLast != null ->
-            "Last train today ${plan.missedLast.departure.hhmm()} · had to leave by ${plan.missedLast.leaveAt.hhmm()}"
+            "Last train today ${plan.missedLast.boardLabel()} · had to leave by ${plan.missedLast.leaveAt.hhmm()}"
         else -> return
     }
     Spacer(Modifier.height(24.dp))

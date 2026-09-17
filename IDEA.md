@@ -22,7 +22,7 @@ holiday calendar.
 
 My commute: board at **מרכז הכרמל (Carmel Center)**, the top terminus, ride down and get off at
 **הנביאים (HaNevi'im)**, the 4th stop (3 stops travelled). Boarding at a terminus means the
-published departure time is exact for me; only the arrival at HaNevi'im is an estimate (~5 min).
+published departure time is exact for me; only the arrival at HaNevi'im is an estimate (~6.5 min).
 
 Settings (one small screen, saved locally):
 - Home station, work station (direction follows from these). Defaults: Carmel Center -> HaNevi'im.
@@ -79,17 +79,21 @@ Stations bottom → top: עיר תחתית (Ir Tahtit) · הדר-עירייה (H
 
 Only terminus departures are published. End-to-end trip is ~8 min (1.8 km); the passing
 loop is midway between HaNevi'im and Masada, so the two trains cross at ~minute 4.
-Working estimate of minutes after terminus departure, by number of stops travelled:
+Minutes after the published terminus departure until the train reaches a station, by number of
+stops travelled:
 
 | stops from terminus | 0 | 1 | 2 | 3 | 4 | 5 |
 |---|---|---|---|---|---|---|
-| minutes | 0 | 1.5 | 3 | 5 | 6.5 | 8 |
+| minutes | 0 | 3.5 | 5 | 6.5 | 8 | 9.5 |
 
-Same table in both directions. For my trip (Carmel Center -> HaNevi'im, 3 stops) that is
-~5 min, arriving just after the trains cross at the passing loop. This is the only non-exact
-number in the whole app, hence the calibration field in settings. The way back
-(HaNevi'im -> Carmel Center) needs the estimate on the boarding side: the up train reaches
-HaNevi'im ~3 min after leaving Ir Tahtit.
+Same table in both directions. **Measured 2026-09-17** standing at HaNevi'im going up: the 08:48
+and 09:00 departures from Ir Tahtit reached the platform at ~08:53 and ~09:04, i.e. ~5 min for
+2 stops, not the 3 min the first estimate gave. So the table is now a ~2 min lag between the
+published minute and the train actually moving, plus 1.5 min per stop; the 12 min headway was
+confirmed at the same time. Index 0 stays 0: at a terminus the published minute is when you have
+to be on the platform. These are still the only non-exact numbers in the app, hence the
+calibration fields in settings. My morning trip (Carmel Center -> HaNevi'im, 3 stops) is ~6.5 min
+and remains an extrapolation until a morning ride is timed.
 
 ## Core computation
 
@@ -136,13 +140,14 @@ LEAVE IN
 at 08:10                                    "tomorrow at 05:38" when not today
 ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░      2 dp bar draining over one headway
 ┌──────────────────────────────────────┐
-│ 08:32                        ~08:37  │    train time → estimated arrival
+│ 08:32                        ~08:37  │    time at MY station → estimated arrival
+                                             ("~08:53" when my station is not the terminus)
 │ מרכז הכרמל                  הנביאים │    each Text is pure Hebrew (no bidi tricks)
 │ Merkaz HaCarmel            HaNevi'im │
 └──────────────────────────────────────┘
-LATER
-leave 08:22      08:44 train     ~08:49
-leave 08:34      08:56 train     ~09:01
+LATER                                       columns: leave · board · arrive
+leave 08:22      08:44 board     ~08:49
+leave 08:34      08:56 board     ~09:01
 TOMORROW                                    day divider only when the day changes
 leave 05:38      06:00 train     ~06:05
 Last train today 23:45 · had to leave by 23:23     only when the headline is not today
@@ -156,13 +161,13 @@ Wednesday · weekday timetable · every 12 min 07:00–22:00
 ROUTE
 Home station              מרכז הכרמל  ›     tap → dialog with the six stations top→bottom, radio
 Work station                 הנביאים  ›
-Down the hill, 3 stops · ~5 min             computed
+Down the hill, 3 stops · ~6.5 min           computed
 WALKING
 Home → station                 [22] min     number keyboard, error if not a number
 Work → station                 [ 5] min
 Safety margin                  [ 0] min
 CALIBRATION                           ▾     collapsed unless an override is set
-To work · 3 stops, default 5     [    ]     Reset button when set
-From work · 2 stops, default 3   [    ]
+To work · 3 stops, default 6.5   [    ]     Reset button when set
+From work · 2 stops, default 5   [    ]
 v0.2 · timetable from carmelithaifa.co.il
 ```
