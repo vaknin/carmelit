@@ -208,7 +208,7 @@ loses the trip, so GPS is now built *alongside* the taps; see "C. GPS recording"
 ### C. GPS recording (built 2026-10-02)
 
 - Opt-in (Settings → GPS): home and work doors set with "Set to here", 120 m exit-only
-  geofences (Play Services). Leaving one starts `TrackService` (foreground, fix every 5 s).
+  geofences (Play Services). Leaving one starts `TrackService` (foreground, fix every 10 s; 5 s was cut for battery).
   Direction = the fence left. Leave time = trigger fix time minus its distance from the door at
   1.3 m/s.
 - Kept only if a good fix (≤ 50 m) reaches the boarding station (80 m around the GTFS point)

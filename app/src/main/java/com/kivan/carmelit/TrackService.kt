@@ -154,7 +154,7 @@ class TrackService : Service() {
         private const val TAG = "Carmelit"
         private const val CHANNEL = "trip"
         private const val NOTIFICATION_ID = 1
-        private const val INTERVAL_MS = 5_000L
+        private const val INTERVAL_MS = 10_000L
         private const val TICK_MS = 30_000L
         private const val EXTRA_GOING_HOME = "goingHome"
         private const val EXTRA_T = "t"
