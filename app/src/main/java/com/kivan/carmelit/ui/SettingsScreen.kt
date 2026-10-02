@@ -1,6 +1,10 @@
 package com.kivan.carmelit.ui
 
+import android.Manifest
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
@@ -25,10 +29,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -41,16 +47,26 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.kivan.carmelit.Direction
+import com.kivan.carmelit.LatLng
 import com.kivan.carmelit.Leg
 import com.kivan.carmelit.R
 import com.kivan.carmelit.Run
 import com.kivan.carmelit.RunStats
 import com.kivan.carmelit.Settings
+import com.kivan.carmelit.Source
 import com.kivan.carmelit.Station
+import com.kivan.carmelit.Step
+import com.kivan.carmelit.ZONE
+import com.kivan.carmelit.hasPermission
 import com.kivan.carmelit.Summary
 import com.kivan.carmelit.defaultOffsetSeconds
 import com.kivan.carmelit.stopsFromOrigin
+import java.time.Instant
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun SettingsScreen(initial: Settings, runs: List<Run>, onDone: (Settings) -> Unit) {
@@ -71,6 +87,9 @@ fun SettingsScreen(initial: Settings, runs: List<Run>, onDone: (Settings) -> Uni
         )
     }
     var picking by remember { mutableStateOf<StationSlot?>(null) }
+    var homeLL by remember { mutableStateOf(initial.homeLL) }
+    var workLL by remember { mutableStateOf(initial.workLL) }
+    var autoRecord by remember { mutableStateOf(initial.autoRecord) }
 
     fun build() = Settings(
         home = home,
@@ -80,6 +99,9 @@ fun SettingsScreen(initial: Settings, runs: List<Run>, onDone: (Settings) -> Uni
         marginMin = margin.trim().toIntOrNull() ?: 0,
         toWorkOffsetMin = toWorkOffset.trim().toDoubleOrNull(),
         fromWorkOffsetMin = fromWorkOffset.trim().toDoubleOrNull(),
+        homeLL = homeLL,
+        workLL = workLL,
+        autoRecord = autoRecord,
     )
 
     val done = { onDone(build()) }
@@ -134,9 +156,11 @@ fun SettingsScreen(initial: Settings, runs: List<Run>, onDone: (Settings) -> Uni
             MinutesField("Home → station", walkHome) { walkHome = it }
             // Planning for the slow end: a walk that usually works is not one that catches trains.
             toWorkStats.walk?.let { m -> Measured(m, "slow ${mmss(m.high)}", ceilMin(m.high).toString()) { walkHome = it } }
+            toWorkStats.entranceWalk?.let { GpsWalk(it) }
             Spacer(Modifier.height(12.dp))
             MinutesField("Work → station", walkWork) { walkWork = it }
             toHomeStats.walk?.let { m -> Measured(m, "slow ${mmss(m.high)}", ceilMin(m.high).toString()) { walkWork = it } }
+            toHomeStats.entranceWalk?.let { GpsWalk(it) }
             Spacer(Modifier.height(12.dp))
             MinutesField("Safety margin", margin, hint = "Leave this many minutes earlier", imeAction = ImeAction.Done) { margin = it }
 
@@ -181,6 +205,13 @@ fun SettingsScreen(initial: Settings, runs: List<Run>, onDone: (Settings) -> Uni
             MeasuredReport("TO WORK", toWorkStats, Leg.of(build(), false))
             MeasuredReport("TO HOME", toHomeStats, Leg.of(build(), true))
 
+            Spacer(Modifier.height(32.dp))
+            GpsSection(
+                homeLL, workLL, autoRecord,
+                onHome = { homeLL = it }, onWork = { workLL = it }, onAutoRecord = { autoRecord = it },
+            )
+            TripsReport(runs, toWorkStats, toHomeStats)
+
             Spacer(Modifier.height(40.dp))
             val context = LocalContext.current
             val version = remember {
@@ -201,6 +232,166 @@ fun SettingsScreen(initial: Settings, runs: List<Run>, onDone: (Settings) -> Uni
 }
 
 private enum class StationSlot { HOME, WORK }
+
+/** What GPS saw of the same walk: door to the station entrance, which is short of the platform. */
+@Composable
+private fun GpsWalk(m: Summary) {
+    Text(
+        "GPS: to the station entrance ${mmss(m.median)} typical · slow ${mmss(m.high)} · ${m.n} ${if (m.n == 1) "trip" else "trips"}",
+        style = MaterialTheme.typography.bodySmall.merge(Tabular),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, top = 4.dp),
+    )
+}
+
+/**
+ * Door locations and the switch for automatic recording. Turning it on asks, in order, for
+ * precise location, "Allow all the time" (geofences fire with the app closed), and notifications
+ * (the recording notice).
+ */
+@Composable
+private fun GpsSection(
+    homeLL: LatLng?,
+    workLL: LatLng?,
+    autoRecord: Boolean,
+    onHome: (LatLng) -> Unit,
+    onWork: (LatLng) -> Unit,
+    onAutoRecord: (Boolean) -> Unit,
+) {
+    val context = LocalContext.current
+    val dim = MaterialTheme.colorScheme.onSurfaceVariant
+    // Bumped after every permission answer so the status below is re-read.
+    var permTick by remember { mutableIntStateOf(0) }
+    var note by remember { mutableStateOf<String?>(null) }
+    var settingSlot by remember { mutableStateOf<StationSlot?>(null) }
+    val fine = remember(permTick) { context.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION) }
+    val background = remember(permTick) { context.hasPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) }
+
+    @Suppress("MissingPermission") // only called with fine location granted
+    fun fetchHere(slot: StationSlot) {
+        note = "Getting a fix…"
+        LocationServices.getFusedLocationProviderClient(context)
+            .getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+            .addOnSuccessListener { loc ->
+                if (loc == null) { note = "No GPS fix; try again outside or by a window"; return@addOnSuccessListener }
+                val p = LatLng(loc.latitude, loc.longitude)
+                if (slot == StationSlot.HOME) onHome(p) else onWork(p)
+                note = "Set to within ±${loc.accuracy.toInt()} m"
+            }
+            .addOnFailureListener { note = "Location failed: ${it.message}" }
+    }
+
+    val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { permTick++ }
+    val backgroundLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        permTick++
+        if (Build.VERSION.SDK_INT >= 33 && !context.hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
+            notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+    val fineLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        permTick++
+        if (!context.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
+            note = "Needs precise location"
+            settingSlot = null
+            return@rememberLauncherForActivityResult
+        }
+        settingSlot?.let { fetchHere(it); settingSlot = null }
+            ?: backgroundLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+    }
+    val locationPerms = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+
+    fun setHere(slot: StationSlot) {
+        if (fine) fetchHere(slot) else { settingSlot = slot; fineLauncher.launch(locationPerms) }
+    }
+    fun requestRecording() {
+        if (!fine) fineLauncher.launch(locationPerms)
+        else if (!background) backgroundLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        else if (Build.VERSION.SDK_INT >= 33 && !context.hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
+            notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    Section("GPS")
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Switch) { onAutoRecord(!autoRecord); if (!autoRecord) requestRecording() }
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text("Record trips automatically", style = MaterialTheme.typography.bodyLarge)
+            Text("Leaving home or work records the walk and the train", style = MaterialTheme.typography.bodySmall, color = dim)
+        }
+        Switch(checked = autoRecord, onCheckedChange = { onAutoRecord(it); if (it) requestRecording() })
+    }
+    LocationRow("Home door", homeLL) { setHere(StationSlot.HOME) }
+    LocationRow("Work door", workLL) { setHere(StationSlot.WORK) }
+    note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = dim) }
+    if (autoRecord) {
+        val (status, fix) = when {
+            !fine || !background -> "Needs location access “Allow all the time”" to true
+            homeLL == null || workLL == null -> "Set both doors, standing at each" to false
+            else -> "On · walks that don't reach the station are not kept" to false
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(status, style = MaterialTheme.typography.bodySmall,
+                color = if (fix) MaterialTheme.colorScheme.error else dim, modifier = Modifier.weight(1f))
+            if (fix) TextButton(onClick = ::requestRecording) { Text("Grant") }
+        }
+    }
+}
+
+@Composable
+private fun LocationRow(label: String, value: LatLng?, onSet: () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(label, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                value?.let { "%.5f, %.5f".format(Locale.ROOT, it.lat, it.lng) } ?: "Not set",
+                style = MaterialTheme.typography.bodyMedium.merge(Tabular),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        TextButton(onClick = onSet) { Text("Set to here") }
+    }
+}
+
+private val TRIP_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE HH:mm", Locale.ENGLISH)
+private val HHMM: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+private fun Long.hhmm(f: DateTimeFormatter = HHMM): String = Instant.ofEpochSecond(this).atZone(ZONE).format(f)
+
+/** Door to door per direction, then the last trips, newest first. */
+@Composable
+private fun TripsReport(runs: List<Run>, toWork: RunStats, toHome: RunStats) {
+    val trips = runs.filter { it.doorToDoor != null }.sortedByDescending { it[Step.LEAVE] }.take(10)
+    if (trips.isEmpty()) return
+    Spacer(Modifier.height(32.dp))
+    Section("TRIPS")
+    for ((label, st) in listOf("To work" to toWork, "To home" to toHome)) {
+        st.doorToDoor?.let {
+            Spacer(Modifier.height(8.dp))
+            Text("$label: ${mmss(it.median)} door to door (fast ${mmss(it.low)}, slow ${mmss(it.high)}; ${it.n} ${if (it.n == 1) "trip" else "trips"})",
+                style = MaterialTheme.typography.bodyMedium.merge(Tabular))
+        }
+    }
+    Spacer(Modifier.height(8.dp))
+    for (r in trips) {
+        val leave = r[Step.LEAVE]!!
+        Text(
+            listOfNotNull(
+                "${leave.hhmm(TRIP_TIME)} → ${r[Step.DOOR]!!.hhmm()}",
+                mmss(r.doorToDoor!!),
+                r.departure?.let { "train ${it.hhmm()}" },
+                if (r.goingHome) "home" else "work",
+                when (r.source) { Source.GPS -> "GPS"; Source.MERGED -> "taps + GPS"; Source.MANUAL -> "taps" },
+            ).joinToString(" · "),
+            style = MaterialTheme.typography.bodySmall.merge(Tabular),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+    }
+}
 
 private fun fmt(v: Double): String = if (v == Math.floor(v)) v.toInt().toString() else v.toString()
 

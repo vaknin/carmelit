@@ -14,8 +14,8 @@ android {
         applicationId = "com.kivan.carmelit"
         minSdk = 29
         targetSdk = 37
-        versionCode = 2
-        versionName = "0.2"
+        versionCode = 3
+        versionName = "0.3"
     }
 
     buildTypes {
@@ -41,6 +41,8 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    // Geofences and fused location for GPS trip recording.
+    implementation(libs.play.services.location)
     debugImplementation(libs.androidx.compose.ui.tooling)
     // JVM unit tests cover the schedule engine; nothing in it touches android.*.
     testImplementation(libs.junit)

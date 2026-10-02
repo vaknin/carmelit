@@ -106,8 +106,12 @@ fun MainScreen(
                 Spacer(Modifier.height(48.dp))
                 Text("No service found in the next 8 days", style = MaterialTheme.typography.headlineSmall)
             } else {
+                if (plan.earlier.isNotEmpty()) {
+                    Spacer(Modifier.height(20.dp))
+                    EarlierList(plan.earlier, now)
+                }
                 Spacer(Modifier.height(28.dp))
-                Headline(first, now)
+                Headline(first, now, enRoute = plan.leftAt != null)
                 Spacer(Modifier.height(28.dp))
                 TripCard(first, plan.from, plan.to)
                 if (plan.trips.size > 1) {
@@ -151,14 +155,20 @@ private fun TopBar(goingHome: Boolean, onSetGoingHome: (Boolean) -> Unit, onOpen
     }
 }
 
+/**
+ * The countdown. Normally to the leave time; [enRoute] (a recorded trip says you already left)
+ * counts down to boarding instead, since leaving is behind you.
+ */
 @Composable
-private fun Headline(first: Trip, now: ZonedDateTime) {
-    val remaining = Duration.between(now, first.leaveAt)
+private fun Headline(first: Trip, now: ZonedDateTime, enRoute: Boolean) {
+    val target = if (enRoute) first.boardAt else first.leaveAt
+    val remaining = Duration.between(now, target)
     val minutes = Math.floorDiv(remaining.seconds, 60L)
     val urgent = minutes <= 3
     val color = if (urgent) Accent else MaterialTheme.colorScheme.onSurface
 
-    Text(if (minutes <= 0) "LEAVE" else "LEAVE IN", style = eyebrow(), color = dim())
+    val verb = if (enRoute) "BOARD" else "LEAVE"
+    Text(if (minutes <= 0) verb else "$verb IN", style = eyebrow(), color = dim())
     // (big text, small unit) keyed on the string so a change cross-fades instead of popping.
     val hero: Pair<String, String?> = when {
         minutes <= 0 -> "now" to null
@@ -183,9 +193,9 @@ private fun Headline(first: Trip, now: ZonedDateTime) {
             }
         }
     }
-    val prefix = dayLabel(first.leaveAt.toLocalDate(), now.toLocalDate())
+    val prefix = dayLabel(target.toLocalDate(), now.toLocalDate())
     Text(
-        (if (prefix.isEmpty()) "" else "$prefix ") + "at ${first.leaveAt.hhmm()}",
+        (if (prefix.isEmpty()) "" else "$prefix ") + "at " + (if (enRoute) first.boardLabel() else first.leaveAt.hhmm()),
         style = MaterialTheme.typography.headlineSmall.merge(Tabular),
     )
     // Drains over the last 15 minutes (the longest headway); hidden before that.
@@ -256,6 +266,26 @@ private fun LaterList(trips: List<Trip>, today: LocalDate) {
         ThreeColumns(
             trip.leaveAt.hhmm(), trip.boardLabel(), "~" + trip.arriveAt.hhmmRounded(),
             MaterialTheme.typography.bodyLarge.merge(Tabular), MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+/**
+ * Trains whose leave time has passed but that have not left your station yet, dimmed: if you
+ * are already on the way, one of these may be the one to run for.
+ */
+@Composable
+private fun EarlierList(trips: List<Trip>, now: ZonedDateTime) {
+    Text("EARLIER · IF YOU ALREADY LEFT", style = eyebrow(), color = dim())
+    Spacer(Modifier.height(8.dp))
+    ThreeColumns("leave", "board", "arrive", MaterialTheme.typography.labelMedium, dim())
+    for (trip in trips) {
+        val min = Math.floorDiv(Duration.between(now, trip.boardAt).seconds, 60L)
+        Spacer(Modifier.height(6.dp))
+        ThreeColumns(
+            trip.leaveAt.hhmm(), trip.boardLabel() + if (min > 0) " · ${min}′" else " · now",
+            "~" + trip.arriveAt.hhmmRounded(),
+            MaterialTheme.typography.bodyLarge.merge(Tabular), dim(),
         )
     }
 }

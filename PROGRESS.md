@@ -3,6 +3,27 @@
 Spec: `IDEA.md`. Reference calendar: `hebcal.js`. Build/run: `README.md`.
 Keep this file current: one dated entry per work session, plus the living sections below.
 
+## Session 2026-10-02 — GPS trip recording, earlier trains (v0.3)
+
+Idea 3489a227: forgetting "Leaving" (or pressing it midway) loses the trip, and once on the way
+the app hid the train about to be caught. Design in IDEA.md "C. GPS recording".
+
+- **Earlier trains**: `Plan.earlier` (≤ 2 trains past their leave time but not yet gone from
+  your station, 1 min grace) shown dimmed above the headline. `nextTrips(leftAt=)` judges
+  catchability from a recorded leave time; the headline then reads "Board in".
+- **GPS**: `Geo.kt`, `Tracking.kt`, `TrackService.kt`; `Run.source/entranceAt/surfaceAt`
+  (old 7-field run lines still load); `merge`/`record`; Settings GPS section + Trips report.
+  New dependency play-services-location 21.4.0; permissions fine/background location,
+  location FGS, notifications, boot. Station points from the GTFS feed of 2026-10-01.
+- 55 JVM tests pass (16 new: `GeoTest`, planner earlier/leftAt, merge/record).
+- Installed on the Pixel 8 (16:20 Friday, no service): launches, no crash in logcat. **Not yet
+  verified on device**: the earlier block and "Board in" headline on screen, the permission
+  flow, a geofence firing, the service recording and saving. Needs the owner: turn on Settings →
+  GPS, set both doors on site, grant "Allow all the time", then ride once each way.
+  Tracks are kept in `files/tracks/` (`adb shell run-as com.kivan.carmelit ls files/tracks`).
+- Unverified assumptions to check on the first rides: geofence exit latency; that the GTFS
+  station points are within 80 m of the entrances used; surfacing within ~1 min of the doors.
+
 ## Session 2026-09-17 (later) — closing trains, Yom Kippur dropped, six-tap trip timer
 
 - Re-checked the official page (unchanged) and compared with the Ministry of Transport GTFS feed;

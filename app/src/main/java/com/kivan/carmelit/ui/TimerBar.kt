@@ -21,21 +21,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kivan.carmelit.Run
+import com.kivan.carmelit.Source
 import com.kivan.carmelit.Step
+import com.kivan.carmelit.ZONE
+import java.time.Instant
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.delay
 
 /** Seconds as "m:ss", with a sign for negatives. */
 fun mmss(sec: Long): String = (if (sec < 0) "−" else "") + "%d:%02d".format(Math.abs(sec) / 60, Math.abs(sec) % 60)
 
+private val HHMM: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
 /** What one finished run measured, for the line shown until the next run starts. */
-private fun Run.summary(): String {
+fun Run.summary(): String {
     fun d(a: Step, b: Step): Long? = this[a]?.let { x -> this[b]?.let { y -> x - y } }
     return listOfNotNull(
-        d(Step.PLATFORM, Step.LEAVE)?.let { "walk ${mmss(it)}" },
+        when (source) { Source.GPS -> "GPS"; Source.MERGED -> "taps + GPS"; Source.MANUAL -> null },
+        d(Step.PLATFORM, Step.LEAVE)?.let { "walk ${mmss(it)}" }
+            ?: entranceAt?.let { e -> this[Step.LEAVE]?.let { "to station ${mmss(e - it)}" } },
+        departure?.let { "train " + Instant.ofEpochSecond(it).atZone(ZONE).format(HHMM) },
         d(Step.DOORS_CLOSE, Step.PLATFORM)?.let { "${mmss(it)} to spare" },
         (this[Step.ARRIVE]?.let { a -> (this[Step.DOORS_CLOSE] ?: this[Step.DOORS_OPEN])?.let { a - it } })?.let { "ride ${mmss(it)}" },
         d(Step.DOOR, Step.ARRIVE)?.let { "last leg ${mmss(it)}" },
-        if (departure == null && taps.drop(2).any { it != null }) "no train matched" else null,
+        doorToDoor?.let { "door to door ${mmss(it)}" },
+        if (departure == null && (taps.drop(2).any { it != null } || surfaceAt != null)) "no train matched" else null,
     ).joinToString(" · ").ifEmpty { "nothing measured" }
 }
 

@@ -202,6 +202,29 @@ foreground service to keep tracking with the screen off, and does not work under
 platform — which is exactly the point being measured. Two taps are more accurate than a geofence
 and cost ~50 lines. GPS rejected unless tapping proves too annoying.
 
+**Reversed 2026-10-02 (owner):** forgetting the button, or pressing it halfway down the street,
+loses the trip, so GPS is now built *alongside* the taps; see "C. GPS recording".
+
+### C. GPS recording (built 2026-10-02)
+
+- Opt-in (Settings → GPS): home and work doors set with "Set to here", 120 m exit-only
+  geofences (Play Services). Leaving one starts `TrackService` (foreground, fix every 5 s).
+  Direction = the fence left. Leave time = trigger fix time minus its distance from the door at
+  1.3 m/s.
+- Kept only if a good fix (≤ 50 m) reaches the boarding station (80 m around the GTFS point)
+  by walk + 20 min; coming back inside the start fence after 3 min also drops it. Ends at the
+  destination fence or after 90 min.
+- What GPS gives: LEAVE, `entranceAt` (last seen at the station before going underground),
+  `surfaceAt` (first seen at the destination station), DOOR. Doors open/close stay taps. The
+  train is matched from `surfaceAt − 60 s` when no door/arrival tap exists.
+- Taps win (`merge`): GPS fills empty steps; a LEAVE tapped > 60 s after the GPS one is
+  replaced. An open run gets the GPS times and stays open; a saved one is replaced.
+- `entranceAt` is not the platform, so it never feeds the walk field; Settings shows it
+  separately, plus door-to-door per direction and the last 10 trips.
+- Main screen: while recording, the direction follows the session and the headline counts
+  down to boarding, judging trains from the real leave time. Independently, up to two
+  "earlier" trains (leave time passed, not yet left your station) are shown dimmed.
+
 ### B. External data — researched 2026-09-17
 
 Moovit, Google Maps etc. do not track the Carmelit by GPS; they all replay the Ministry of

@@ -91,4 +91,66 @@ class RunsTest {
         assertEquals(r, RunStore.decode(RunStore.encode(r)))
         assertNull(RunStore.decode("garbage"))
     }
+
+    /** What GPS made of the 08:00 to-work trip: left 07:28, underground 07:50, up at HaNevi'im 08:07:30, door 08:12. */
+    private val gps = Run(
+        false, Station.MERKAZ_HACARMEL, Station.HANEVIIM,
+        taps = listOf(at("2026-09-16T07:28:00"), null, null, null, null, at("2026-09-16T08:12:00")),
+        pos = Step.entries.size, source = Source.GPS,
+        entranceAt = at("2026-09-16T07:50:00"), surfaceAt = at("2026-09-16T08:07:30"),
+    )
+
+    @Test fun mergeKeepsTapsButReplacesALateLeave() {
+        // "Leaving" pressed 4 min down the road; platform and doors tapped properly.
+        val manual = run(toWork, "07:32:00", "07:52:00", null, "08:01:10")
+        val m = merge(manual, gps)
+        assertEquals(Source.MERGED, m.source)
+        assertEquals(at("2026-09-16T07:28:00"), m[Step.LEAVE])
+        assertEquals(at("2026-09-16T07:52:00"), m[Step.PLATFORM])
+        assertEquals(at("2026-09-16T08:12:00"), m[Step.DOOR])
+        assertEquals(manual.pos, m.pos) // still open for "Train arrived"
+        assertEquals(at("2026-09-16T07:50:00"), m.entranceAt)
+        // Pressed at the door (within a minute of GPS): the tap stands.
+        assertEquals(at("2026-09-16T07:28:40"), merge(run(toWork, "07:28:40"), gps)[Step.LEAVE])
+    }
+
+    @Test fun gpsAloneMatchesOnSurfacing() {
+        val r = gps.finished(Settings())
+        assertEquals(at("2026-09-16T08:00:00"), r.departure) // 08:07:30 − 1 min climb = 08:00 + 6.5 min
+        assertEquals(44 * 60L, r.doorToDoor)
+        val st = RunStats(listOf(r), false, r.from, r.to)
+        assertEquals(Summary(1, 22 * 60L, 22 * 60L, 22 * 60L), st.entranceWalk)
+        assertNull(st.walk) // the entrance is not the platform
+    }
+
+    @Test fun recordMergesIntoTheOpenRunOrTheSavedOneOrSavesAlone() {
+        val s = Settings()
+        val open = run(toWork, "07:32:00", "07:52:00", null, "08:01:10")
+        val intoOpen = record(gps, open, emptyList(), s)
+        assertEquals(Source.MERGED, intoOpen.active!!.source)
+        assertEquals(emptyList<Run>(), intoOpen.runs)
+        assertNull(intoOpen.saved)
+
+        val saved = open.finished(s)
+        val other = run(toHome, "17:00:00", "17:04:00").finished(s)
+        val intoSaved = record(gps, null, listOf(saved, other), s)
+        assertEquals(2, intoSaved.runs.size)
+        assertEquals(Source.MERGED, intoSaved.runs[0].source)
+        assertEquals(at("2026-09-16T08:00:00"), intoSaved.runs[0].departure)
+        assertEquals(intoSaved.runs[0], intoSaved.saved)
+
+        // A manual run of yesterday is a different trip.
+        val alone = record(gps, null, listOf(run(toWork, "06:00:00").copy(taps = listOf(at("2026-09-15T07:30:00"), null, null, null, null, null))), s)
+        assertEquals(2, alone.runs.size)
+        assertEquals(Source.GPS, alone.saved!!.source)
+    }
+
+    @Test fun runsSavedBeforeGpsStillLoad() {
+        val old = "W|MERKAZ_HACARMEL|HANEVIIM|1,2,,,,|6||"
+        val r = RunStore.decode(old)!!
+        assertEquals(Source.MANUAL, r.source)
+        assertNull(r.entranceAt)
+        val g = gps.finished(Settings())
+        assertEquals(g, RunStore.decode(RunStore.encode(g)))
+    }
 }

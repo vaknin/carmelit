@@ -20,4 +20,7 @@ reference Hebrew-calendar implementation that `HebrewCalendar.kt` ports.
 - `DayClassifier.kt` — which timetable a date runs (Shabbat, chag, erev, motzei, DST).
 - `Planner.kt` — next catchable trains given walk time, margin and station offsets.
 - `Settings.kt` — settings data class + SharedPreferences store.
+- `Runs.kt` — trip timer runs, train matching, GPS merge (`merge`, `record`), stats.
+- `Geo.kt` — station coordinates (GTFS), GPS track model, session verdict, track → run.
+- `Tracking.kt` / `TrackService.kt` — geofences, receivers, the foreground recording service.
 - `ui/` — the one screen and the settings screen.

@@ -120,4 +120,46 @@ class PlannerTest {
         assertEquals(at("2026-09-16T17:02:30"), evening.trips[0].boardAt)
         assertEquals(at("2026-09-16T16:57:30"), evening.trips[0].leaveAt)
     }
+
+    @Test fun earlierTrainsShowUntilTheyBoard() {
+        // Going home from HaNevi'im (5 min walk, board 5 min after Ir Tahtit): at 09:00 the
+        // 08:48 (boards ~08:53) is gone, the 09:00 (boards 09:05, leave 09:00) is the headline.
+        val home = Settings()
+        val p = nextTrips(at("2026-09-16T09:01"), home, goingHome = true)
+        assertEquals(at("2026-09-16T09:12"), p.trips[0].departure)
+        assertEquals(listOf(at("2026-09-16T09:00")), p.earlier.map { it.departure })
+        // A minute after boarding it still shows (doors close late); two minutes after, gone.
+        assertEquals(1, nextTrips(at("2026-09-16T09:06"), home, goingHome = true).earlier.size)
+        assertEquals(listOf(at("2026-09-16T09:12")),
+            nextTrips(at("2026-09-16T09:15"), home, goingHome = true).earlier.map { it.departure })
+    }
+
+    @Test fun earlierKeepsTheTwoLatest() {
+        // To work, 22 min walk: at 08:20 the 08:12 has left; 08:24/08:36 are not catchable
+        // (leave 08:02/08:14) but still board later, and only the two latest are kept.
+        val p = nextTrips(at("2026-09-16T08:20"), Settings(), goingHome = false)
+        assertEquals(listOf(at("2026-09-16T08:24"), at("2026-09-16T08:36")), p.earlier.map { it.departure })
+        assertEquals(at("2026-09-16T08:48"), p.trips[0].departure)
+    }
+
+    @Test fun leftAtShiftsTheHeadline() {
+        // Left home at 08:01: the 08:24 (leave 08:02) is still reachable at 08:20, even though
+        // "leaving now" would only make the 08:48.
+        val p = nextTrips(at("2026-09-16T08:20"), Settings(), goingHome = false, leftAt = at("2026-09-16T08:01"))
+        assertEquals(at("2026-09-16T08:24"), p.trips[0].departure)
+        assertEquals(at("2026-09-16T08:01"), p.leftAt)
+        // The 08:12 boards at the terminus at 08:12, already gone at 08:20; not reachable either.
+        assertEquals(emptyList<Any>(), p.earlier)
+        // Left too late for the 08:24: it moves to earlier, the 08:36 is the headline.
+        val q = nextTrips(at("2026-09-16T08:20"), Settings(), goingHome = false, leftAt = at("2026-09-16T08:05"))
+        assertEquals(at("2026-09-16T08:36"), q.trips[0].departure)
+        assertEquals(listOf(at("2026-09-16T08:24")), q.earlier.map { it.departure })
+    }
+
+    @Test fun midnightTrainIsEarlierAfterMidnight() {
+        // At 00:00:30 Thursday the 24:00 (Wednesday's service) is boarding at Merkaz HaCarmel.
+        val p = nextTrips(at("2026-09-17T00:00:30"), Settings(), goingHome = false)
+        assertEquals(listOf(at("2026-09-17T00:00")), p.earlier.map { it.departure })
+        assertEquals(at("2026-09-17T06:00"), p.trips[0].departure)
+    }
 }
