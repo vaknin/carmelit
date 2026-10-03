@@ -12,7 +12,7 @@ class GeoTest {
     // ~1.3 km south-west of Merkaz HaCarmel, and ~150 m from HaNevi'im.
     private val home = LatLng(32.7950, 34.9800)
     private val work = LatLng(32.8135, 34.9965)
-    private val settings = Settings(homeLL = home, workLL = work, autoRecord = true)
+    private val settings = Settings(homeLL = home, workLL = work)
     private val mc = STATION_POINTS.getValue(Station.MERKAZ_HACARMEL)
     private val hn = STATION_POINTS.getValue(Station.HANEVIIM)
 

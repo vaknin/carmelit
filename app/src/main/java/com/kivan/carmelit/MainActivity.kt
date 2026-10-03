@@ -99,12 +99,23 @@ private fun App(store: SettingsStore, runStore: RunStore, resumeTick: Int) {
     }
 
     if (showSettings) {
-        SettingsScreen(settings, runs) { updated ->
-            settings = updated
-            store.save(updated)
-            Geofences.sync(context, updated)
-            showSettings = false
-        }
+        SettingsScreen(
+            settings, runs,
+            onChange = { updated ->
+                if (updated != settings) {
+                    val doors = updated.homeLL != settings.homeLL || updated.workLL != settings.workLL
+                    settings = updated
+                    store.save(updated)
+                    if (doors) Geofences.sync(context, updated)
+                }
+            },
+            onDone = { updated ->
+                settings = updated
+                store.save(updated)
+                Geofences.sync(context, updated)
+                showSettings = false
+            },
+        )
     } else {
         // While recording this direction, trains count as catchable from when you really left.
         val leftAt = session?.takeIf { it.goingHome == goingHome }?.let { Instant.ofEpochSecond(it.leftAt).atZone(ZONE) }

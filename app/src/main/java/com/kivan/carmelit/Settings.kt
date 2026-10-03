@@ -9,7 +9,7 @@ import androidx.core.content.edit
  *  - [toWorkOffsetMin]: morning trip, when the train reaches the work station (the arrival estimate).
  *  - [fromWorkOffsetMin]: evening trip, when the train reaches the work station (the boarding time).
  * One number cannot serve both, because the stop counts differ per direction.
- * [homeLL] / [workLL] are the front doors, for GPS recording; [autoRecord] turns it on.
+ * [homeLL] / [workLL] are the front doors; with both set (and location access) trips record by GPS.
  */
 data class Settings(
     val home: Station = Station.MERKAZ_HACARMEL,
@@ -21,7 +21,6 @@ data class Settings(
     val fromWorkOffsetMin: Double? = null,
     val homeLL: LatLng? = null,
     val workLL: LatLng? = null,
-    val autoRecord: Boolean = false,
 )
 
 class SettingsStore(context: Context) {
@@ -43,7 +42,6 @@ class SettingsStore(context: Context) {
             fromWorkOffsetMin = optional("fromWorkOffset"),
             homeLL = LatLng.decode(prefs.getString("homeLL", null)),
             workLL = LatLng.decode(prefs.getString("workLL", null)),
-            autoRecord = prefs.getBoolean("autoRecord", d.autoRecord),
         )
     }
 
@@ -57,6 +55,6 @@ class SettingsStore(context: Context) {
         if (s.fromWorkOffsetMin != null) putFloat("fromWorkOffset", s.fromWorkOffsetMin.toFloat()) else remove("fromWorkOffset")
         putString("homeLL", s.homeLL?.encode())
         putString("workLL", s.workLL?.encode())
-        putBoolean("autoRecord", s.autoRecord)
+        remove("autoRecord") // the old on/off switch
     }
 }

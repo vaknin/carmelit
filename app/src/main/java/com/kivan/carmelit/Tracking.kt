@@ -70,8 +70,8 @@ object Geofences {
     fun sync(context: Context, s: Settings) {
         val client = LocationServices.getGeofencingClient(context)
         val pi = intent(context)
-        // Adding replaces fences with the same id, so removing is only for turning it off.
-        if (!s.autoRecord || s.homeLL == null || s.workLL == null || !context.canRecord()) {
+        // Adding replaces fences with the same id, so removing is only for a door being cleared or access lost.
+        if (s.homeLL == null || s.workLL == null || !context.canRecord()) {
             client.removeGeofences(pi)
             return
         }

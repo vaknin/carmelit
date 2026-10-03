@@ -33,6 +33,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -52,6 +53,7 @@ import com.google.android.gms.location.Priority
 import com.kivan.carmelit.Direction
 import com.kivan.carmelit.LatLng
 import com.kivan.carmelit.Leg
+import com.kivan.carmelit.Geofences
 import com.kivan.carmelit.R
 import com.kivan.carmelit.Run
 import com.kivan.carmelit.RunStats
@@ -69,7 +71,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun SettingsScreen(initial: Settings, runs: List<Run>, onDone: (Settings) -> Unit) {
+fun SettingsScreen(initial: Settings, runs: List<Run>, onChange: (Settings) -> Unit, onDone: (Settings) -> Unit) {
     var home by remember { mutableStateOf(initial.home) }
     var work by remember { mutableStateOf(initial.work) }
     var walkHome by remember { mutableStateOf(initial.walkHomeMin.toString()) }
@@ -89,7 +91,6 @@ fun SettingsScreen(initial: Settings, runs: List<Run>, onDone: (Settings) -> Uni
     var picking by remember { mutableStateOf<StationSlot?>(null) }
     var homeLL by remember { mutableStateOf(initial.homeLL) }
     var workLL by remember { mutableStateOf(initial.workLL) }
-    var autoRecord by remember { mutableStateOf(initial.autoRecord) }
 
     fun build() = Settings(
         home = home,
@@ -101,8 +102,12 @@ fun SettingsScreen(initial: Settings, runs: List<Run>, onDone: (Settings) -> Uni
         fromWorkOffsetMin = fromWorkOffset.trim().toDoubleOrNull(),
         homeLL = homeLL,
         workLL = workLL,
-        autoRecord = autoRecord,
     )
+
+    // Saved as it changes: leaving by Home, the recents list or a kill must not lose an edit.
+    val current = build()
+    LaunchedEffect(current) { onChange(current) }
+    val context = LocalContext.current
 
     val done = { onDone(build()) }
     BackHandler(onBack = done)
@@ -207,13 +212,13 @@ fun SettingsScreen(initial: Settings, runs: List<Run>, onDone: (Settings) -> Uni
 
             Spacer(Modifier.height(32.dp))
             GpsSection(
-                homeLL, workLL, autoRecord,
-                onHome = { homeLL = it }, onWork = { workLL = it }, onAutoRecord = { autoRecord = it },
+                homeLL, workLL,
+                onHome = { homeLL = it }, onWork = { workLL = it },
+                onPermissions = { Geofences.sync(context, build()) },
             )
             TripsReport(runs, toWorkStats, toHomeStats)
 
             Spacer(Modifier.height(40.dp))
-            val context = LocalContext.current
             val version = remember {
                 runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "?"
             }
@@ -245,18 +250,17 @@ private fun GpsWalk(m: Summary) {
 }
 
 /**
- * Door locations and the switch for automatic recording. Turning it on asks, in order, for
- * precise location, "Allow all the time" (geofences fire with the app closed), and notifications
- * (the recording notice).
+ * Door locations. Recording is on once both are set and location access is granted: setting the
+ * second door asks, in order, for precise location, "Allow all the time" (geofences fire with the
+ * app closed), and notifications (the recording notice).
  */
 @Composable
 private fun GpsSection(
     homeLL: LatLng?,
     workLL: LatLng?,
-    autoRecord: Boolean,
     onHome: (LatLng) -> Unit,
     onWork: (LatLng) -> Unit,
-    onAutoRecord: (Boolean) -> Unit,
+    onPermissions: () -> Unit,
 ) {
     val context = LocalContext.current
     val dim = MaterialTheme.colorScheme.onSurfaceVariant
@@ -264,6 +268,7 @@ private fun GpsSection(
     var permTick by remember { mutableIntStateOf(0) }
     var note by remember { mutableStateOf<String?>(null) }
     var settingSlot by remember { mutableStateOf<StationSlot?>(null) }
+    var askRecording by remember { mutableStateOf(false) }
     val fine = remember(permTick) { context.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION) }
     val background = remember(permTick) { context.hasPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) }
 
@@ -277,19 +282,23 @@ private fun GpsSection(
                 val p = LatLng(loc.latitude, loc.longitude)
                 if (slot == StationSlot.HOME) onHome(p) else onWork(p)
                 note = "Set to within ±${loc.accuracy.toInt()} m"
+                val otherDoor = if (slot == StationSlot.HOME) workLL else homeLL
+                if (otherDoor != null) askRecording = true
             }
             .addOnFailureListener { note = "Location failed: ${it.message}" }
     }
 
-    val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { permTick++ }
+    val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { permTick++; onPermissions() }
     val backgroundLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         permTick++
+        onPermissions()
         if (Build.VERSION.SDK_INT >= 33 && !context.hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
             notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
     val fineLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         permTick++
+        onPermissions()
         if (!context.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
             note = "Needs precise location"
             settingSlot = null
@@ -311,34 +320,21 @@ private fun GpsSection(
         }
     }
 
+    LaunchedEffect(askRecording) { if (askRecording) { askRecording = false; requestRecording() } }
+
     Section("GPS")
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(role = Role.Switch) { onAutoRecord(!autoRecord); if (!autoRecord) requestRecording() }
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text("Record trips automatically", style = MaterialTheme.typography.bodyLarge)
-            Text("Leaving home or work records the walk and the train", style = MaterialTheme.typography.bodySmall, color = dim)
-        }
-        Switch(checked = autoRecord, onCheckedChange = { onAutoRecord(it); if (it) requestRecording() })
-    }
     LocationRow("Home door", homeLL) { setHere(StationSlot.HOME) }
     LocationRow("Work door", workLL) { setHere(StationSlot.WORK) }
     note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = dim) }
-    if (autoRecord) {
-        val (status, fix) = when {
-            !fine || !background -> "Needs location access “Allow all the time”" to true
-            homeLL == null || workLL == null -> "Set both doors, standing at each" to false
-            else -> "On · walks that don't reach the station are not kept" to false
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(status, style = MaterialTheme.typography.bodySmall,
-                color = if (fix) MaterialTheme.colorScheme.error else dim, modifier = Modifier.weight(1f))
-            if (fix) TextButton(onClick = ::requestRecording) { Text("Grant") }
-        }
+    val (status, fix) = when {
+        homeLL == null || workLL == null -> "Set both doors, standing at each" to false
+        !fine || !background -> "Needs location access “Allow all the time”" to true
+        else -> "Recording trips automatically · walks that don't reach the station are not kept" to false
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(status, style = MaterialTheme.typography.bodySmall,
+            color = if (fix) MaterialTheme.colorScheme.error else dim, modifier = Modifier.weight(1f))
+        if (fix) TextButton(onClick = ::requestRecording) { Text("Grant") }
     }
 }
 
