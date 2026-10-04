@@ -1,0 +1,6 @@
+# dibs ship recipe. Commands run in the main checkout after the merge; the user approves
+# every version of this file before dibs runs it.
+# Unit tests and a debug build, so a broken app can't land. Installing on the Pixel stays a
+# deliberate step (`./gradlew installDebug`), not part of a ship (the user's call, 2026-10-05).
+test = "./gradlew -q testDebugUnitTest assembleDebug"
+ship = []
