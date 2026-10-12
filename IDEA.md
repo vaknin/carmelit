@@ -205,23 +205,30 @@ and cost ~50 lines. GPS rejected unless tapping proves too annoying.
 **Reversed 2026-10-02 (owner):** forgetting the button, or pressing it halfway down the street,
 loses the trip, so GPS is now built *alongside* the taps; see "C. GPS recording".
 
-### C. GPS recording (built 2026-10-02)
+### C. GPS recording (built 2026-10-02, reworked 2026-10-12)
 
-- Opt-in (Settings → GPS): home and work doors set with "Set to here", 120 m exit-only
-  geofences (Play Services). Leaving one starts `TrackService` (foreground, fix every 10 s; 5 s was cut for battery).
-  Direction = the fence left. Leave time = trigger fix time minus its distance from the door at
-  1.3 m/s.
-- Kept only if a good fix (≤ 50 m) reaches the boarding station (80 m around the GTFS point)
-  by walk + 20 min; coming back inside the start fence after 3 min also drops it. Ends at the
-  destination fence or after 90 min.
-- What GPS gives: LEAVE, `entranceAt` (last seen at the station before going underground),
-  `surfaceAt` (first seen at the destination station), DOOR. Doors open/close stay taps. The
-  train is matched from `surfaceAt − 60 s` when no door/arrival tap exists.
+- Set home and work doors with "Set to here". Two 120 m zones (Play Services geofences) report
+  leaving **and** arriving (ENTER | EXIT, no dwell). They are added only when a door or the
+  permission changed, and retried hourly (plus a notification) while Android has dropped them.
+- A trip is **left one door → arrived at the other**, saved whether or not GPS saw the station.
+  Leaving opens it (leave time = trigger fix time minus its distance from the door at 1.3 m/s)
+  and starts GPS if Android allows it (`TrackService`, a fix every 10 s). Arriving at the other
+  door closes it; arriving back at the same door, or no arrival within 3 h, drops it. A new
+  "left" always ends an older open trip, so a leftover never hijacks it.
+- GPS is a bonus: it adds `entranceAt` (last seen at the boarding station before going
+  underground) and `surfaceAt`. It stops 25 min after the last good fix once the station was
+  reached, at the walk + 20 min deadline when it never was, or after 90 min; the trip stays
+  open for the arrival zone. A trip with no station seen is "no Carmelit seen": shown apart
+  in Settings and never used for the train advice.
+- Door time = the earlier of the first good GPS fix in the destination zone and the arrival
+  report, each moved to the door at walking pace.
+- Every zone report, GPS start or refusal and verdict goes into `triplog.db` (SQLite, 60 days).
+  Settings builds its status line from real checks and offers a button for each problem.
 - Taps win (`merge`): GPS fills empty steps; a LEAVE tapped > 60 s after the GPS one is
   replaced. An open run gets the GPS times and stays open; a saved one is replaced.
 - `entranceAt` is not the platform, so it never feeds the walk field; Settings shows it
   separately, plus door-to-door per direction and the last 10 trips.
-- Main screen: while recording, the direction follows the session and the headline counts
+- Main screen: while recording, the direction follows the trip and the headline counts
   down to boarding, judging trains from the real leave time. Independently, up to two
   "earlier" trains (leave time passed, not yet left your station) are shown dimmed.
 

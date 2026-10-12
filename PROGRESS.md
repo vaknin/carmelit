@@ -3,6 +3,23 @@
 Spec: `IDEA.md`. Reference calendar: `hebcal.js`. Build/run: `README.md`.
 Keep this file current: one dated entry per work session, plus the living sections below.
 
+## Session 2026-10-12 — trips from the home and work zones (plan: `docs/gps-plan.md` steps 1–3)
+
+- A trip is now left one door → arrived at the other, kept with or without the station seen
+  ("no Carmelit seen" runs are shown apart and ignored by `RunStats`). Rules are pure in
+  `Geo.kt` (`onZone`, `judge`, `wantsGps`, `close`); `TripRecorder` applies them; `TrackService`
+  only records GPS and is never sticky.
+- Zones report ENTER and EXIT, added only when `zoneSignature` changes; Android dropping them
+  (or a failed add) → notification + hourly retry (`ZoneRetryReceiver`).
+- `TripLog` (`triplog.db`, SQLite, 60 days): zone reports with lateness, GPS start/refusal, verdicts.
+  Read it: `adb exec-out run-as com.kivan.carmelit cat databases/triplog.db > /tmp/t.db`.
+- Settings status line comes from `recordingStatus` (tested): doors, permissions, location on,
+  zones added, notifications, auto-pause; one button per problem.
+- Bugs fixed: trigger fix saved, missing trigger location handled, unique track file names,
+  discard by value, "Saved" survives a restart, no sticky restart from the background.
+- Debug builds: `FakeZoneReceiver` fakes zone reports over adb.
+- Step 4 of the plan (activity detection, Wi-Fi) waits for what the log shows on real commutes.
+
 ## Session 2026-10-02 — GPS trip recording, earlier trains (v0.3)
 
 Idea 3489a227: forgetting "Leaving" (or pressing it midway) loses the trip, and once on the way

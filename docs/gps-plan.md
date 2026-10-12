@@ -19,6 +19,9 @@ each trip takes door to door.
   small log of what the phone saw so every miss can be explained. Activity detection and Wi-Fi
   are kept as a second step, only if the log shows the zones still miss trips.
 
+**Status (2026-10-12):** steps 1–3 are built (zones decide the trip, no silent failures, the
+smaller bugs). Step 4 waits for the trip log to show misses on real commutes.
+
 ## What I looked at
 
 The code (`Tracking.kt`, `TrackService.kt`, `Geo.kt`, `Runs.kt`, `MainActivity.kt`,
