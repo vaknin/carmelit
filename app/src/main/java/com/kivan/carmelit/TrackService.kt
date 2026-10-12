@@ -61,8 +61,14 @@ class TrackService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-        if (recording) return START_NOT_STICKY // a second start while recording: keep going
         val t = TripRecorder.open(this)
+        if (recording) {
+            // A second start while recording: a new trip may have begun, so say so and keep going.
+            if (t == null || !t.wantsGps(System.currentTimeMillis() / 1000)) { stopGps(); return START_NOT_STICKY }
+            startForeground(NOTIFICATION_ID, notification(t), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
+            TripLog.get(this).add(LogKind.GPS_START, (if (t.goingHome) "to home" else "to work") + ", already running")
+            return START_NOT_STICKY
+        }
         if (t == null || !t.wantsGps(System.currentTimeMillis() / 1000) || !canRecord()) {
             stopGps()
             return START_NOT_STICKY
@@ -95,6 +101,7 @@ class TrackService : Service() {
 
     override fun onDestroy() {
         // The trip is still open when the service dies: only the GPS goes.
+        if (recording) TripLog.get(this).add(LogKind.GPS_STOP, if (TripSession.active.value == null) "trip over" else "service stopped")
         client.removeLocationUpdates(callback)
         handler.removeCallbacks(tick)
         super.onDestroy()

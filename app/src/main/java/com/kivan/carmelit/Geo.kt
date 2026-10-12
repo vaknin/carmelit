@@ -147,7 +147,7 @@ fun Track.judge(now: Long): Verdict {
     val good = goodFixes()
     return when {
         good.any { it.t > leftAt && it.near(dest, FENCE_RADIUS_M.toDouble()) } -> Verdict.FINISH
-        good.any { it.t - leftAt > RETURN_SEC && it.near(origin, FENCE_RADIUS_M.toDouble()) } -> Verdict.DROP
+        good.any { it.t - leftAt > RETURN_SEC && it.near(origin, FENCE_RADIUS_M / 2.0) } -> Verdict.DROP
         now - leftAt > TRIP_MAX_SEC -> Verdict.DROP
         else -> Verdict.CONTINUE
     }
@@ -180,7 +180,7 @@ fun Track.close(arrival: Fix?): Run? {
     val toDoor = { f: Fix -> f.t + (distanceM(f.at, dest) / WALK_MPS).roundToLong() }
     val door = listOfNotNull(
         good.firstOrNull { it.t > leftAt && it.near(dest, FENCE_RADIUS_M.toDouble()) }?.let(toDoor),
-        arrival?.let(toDoor),
+        arrival?.takeIf { it.t > leftAt }?.let(toDoor),
     ).minOrNull()?.takeIf { it > leftAt } ?: return null
     val firstAtExit = good.firstOrNull { it.near(exit, ENTRANCE_RADIUS_M) && good.any { e -> e.t < it.t && e.near(entrance, ENTRANCE_RADIUS_M) } }
     val entered = good.lastOrNull { it.near(entrance, ENTRANCE_RADIUS_M) && (firstAtExit == null || it.t < firstAtExit.t) }
@@ -239,6 +239,7 @@ fun onZone(open: Track?, e: ZoneEvent, s: Settings, now: Long): TripChange {
         return TripChange(next, ended, opened = next != null)
     }
     if (cur == null) return TripChange(null, ended)
+    if (e.at.t < cur.leftAt) return TripChange(cur, ended) // reported out of order: not about this trip
     return if (e.door == cur.destDoor) TripChange(null, finishOrDrop(cur, e.at))
     else TripChange(null, Ended(cur, Verdict.DROP, null, "came back"))
 }

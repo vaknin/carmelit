@@ -44,6 +44,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Permission or location may have been fixed in system settings; and a trip that is over ends now.
+        Geofences.ensure(this, SettingsStore(this).load())
+        TripRecorder.open(this)
         resumeTick++
     }
 }

@@ -199,6 +199,21 @@ class GeoTest {
         assertEquals(Door.WORK, c.open!!.originDoor)
     }
 
+    @Test fun waitingNearTheDoorAfterTheZoneFiredIsNotComingBack() {
+        // 100 m from the door, 10 min after leaving: outside the inner half of the zone, so still on the way.
+        val near = lerp(home, mc, 100 / distanceM(home, mc))
+        val t = startToWork().copy(fixes = walk(near, near, "07:58:00", "08:08:00"))
+        assertEquals(Verdict.CONTINUE, t.judge(at("08:08:00")))
+    }
+
+    @Test fun anArrivalReportedBeforeTheTripStartedIsIgnored() {
+        val t = onZone(null, leftHome(), settings, at("07:58:30")).open!!
+        val old = ZoneEvent(Door.WORK, true, arrivalAtWork(t.leftAt - 600))
+        assertEquals(TripChange(t), onZone(t, old, settings, at("07:59:00")))
+        val oldHome = ZoneEvent(Door.HOME, true, Fix(t.leftAt - 600, home, 10f))
+        assertEquals(TripChange(t), onZone(t, oldHome, settings, at("07:59:00")))
+    }
+
     @Test fun leavingWithNoDoorsSetOpensNothing() {
         val c = onZone(null, leftHome(), Settings(), at("07:58:30"))
         assertEquals(TripChange(null), c)

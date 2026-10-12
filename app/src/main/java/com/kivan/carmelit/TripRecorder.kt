@@ -32,7 +32,7 @@ object TripRecorder {
             TripLog.get(context).add(LogKind.ZONE_ERROR, "late exit ignored: ${e.door.name.lowercase()}")
             return
         }
-        if (e.entered) prefs.edit { putLong("lastEnterAt", e.at.t) }
+        if (e.entered) prefs.edit { putLong("lastEnterAt", maxOf(e.at.t, prefs.getLong("lastEnterAt", 0))) }
         val open = open(context)
         apply(context, onZone(open, e, SettingsStore(context).load(), now()), open)
     }
