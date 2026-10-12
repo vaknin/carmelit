@@ -34,8 +34,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge(SystemBarStyle.dark(android.graphics.Color.TRANSPARENT), SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
         val store = SettingsStore(this)
         val runStore = RunStore(this)
-        // Fences are lost on location toggles and Play Services updates; re-adding is cheap.
-        Geofences.sync(this, store.load())
+        // Zones are added only when a door or permission changed, or after Android dropped them.
+        Geofences.ensure(this, store.load())
+        TripRecorder.open(this) // an open trip from before a restart shows again
         setContent {
             CarmelitTheme { App(store, runStore, resumeTick) }
         }
@@ -54,7 +55,9 @@ private fun App(store: SettingsStore, runStore: RunStore, resumeTick: Int) {
     var goingHome by rememberSaveable { mutableStateOf(false) }
     var runs by remember { mutableStateOf(runStore.all()) }
     var activeRun by remember { mutableStateOf(runStore.active()) }
-    var lastRun by remember { mutableStateOf<Run?>(null) }
+    var lastRun by remember {
+        mutableStateOf(TripSession.lastSaved.value ?: lastAutoSaved(runs, System.currentTimeMillis() / 1000))
+    }
     val context = LocalContext.current
     val session by TripSession.active.collectAsState()
     val runsChanged by TripSession.runsChanged.collectAsState()
@@ -106,13 +109,13 @@ private fun App(store: SettingsStore, runStore: RunStore, resumeTick: Int) {
                     val doors = updated.homeLL != settings.homeLL || updated.workLL != settings.workLL
                     settings = updated
                     store.save(updated)
-                    if (doors) Geofences.sync(context, updated)
+                    if (doors) Geofences.ensure(context, updated)
                 }
             },
             onDone = { updated ->
                 settings = updated
                 store.save(updated)
-                Geofences.sync(context, updated)
+                Geofences.ensure(context, updated)
                 showSettings = false
             },
         )
@@ -140,8 +143,10 @@ private fun App(store: SettingsStore, runStore: RunStore, resumeTick: Int) {
                     onFinish = { activeRun?.let(::finish) },
                     onDiscardActive = { setActive(null) },
                     onDiscardLast = {
-                        runs = runs.filterNot { it === lastRun }
+                        // By value: a run the trip recorder saved is another object than the one in this list.
+                        runs = runStore.all().filterNot { it == lastRun }
                         runStore.saveAll(runs)
+                        TripSession.lastSaved.value = null
                         lastRun = null
                     },
                 )

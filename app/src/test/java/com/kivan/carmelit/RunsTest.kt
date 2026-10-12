@@ -1,6 +1,7 @@
 package com.kivan.carmelit
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -143,6 +144,35 @@ class RunsTest {
         val alone = record(gps, null, listOf(run(toWork, "06:00:00").copy(taps = listOf(at("2026-09-15T07:30:00"), null, null, null, null, null))), s)
         assertEquals(2, alone.runs.size)
         assertEquals(Source.GPS, alone.saved!!.source)
+    }
+
+    /** A trip GPS saw only at the doors: left 07:28, at work 08:05, no station seen. */
+    private val noCarmelit = Run(
+        false, Station.MERKAZ_HACARMEL, Station.HANEVIIM,
+        taps = listOf(at("2026-09-16T07:28:00"), null, null, null, null, at("2026-09-16T08:05:00")),
+        pos = Step.entries.size, source = Source.GPS,
+    )
+
+    @Test fun aTripWithNoCarmelitSeenIsKeptButNeverTeachesTheTrainAdvice() {
+        assertFalse(noCarmelit.rodeCarmelit)
+        assertTrue(gps.rodeCarmelit)
+        assertEquals(noCarmelit, RunStore.decode(RunStore.encode(noCarmelit)))
+        assertEquals(noCarmelit, noCarmelit.finished(Settings()))
+        val r = record(noCarmelit, null, emptyList(), Settings())
+        assertEquals(listOf(noCarmelit), r.runs)
+        assertEquals(noCarmelit, r.saved)
+        val stats = RunStats(listOf(noCarmelit, gps.finished(Settings())), false, toWork.from, toWork.to)
+        assertEquals(Summary(1, 44 * 60L, 44 * 60L, 44 * 60L), stats.doorToDoor)
+        assertNull(RunStats(listOf(noCarmelit), false, toWork.from, toWork.to).doorToDoor)
+    }
+
+    @Test fun lastAutoSavedIsTheLatestNonManualRunOfTheLastHalfDay() {
+        val manual = run(toWork, "07:30:00", "07:52:00", null, "08:01:10", "08:07:20", "08:12:00")
+        val now = at("2026-09-16T09:00:00")
+        assertEquals(gps, lastAutoSaved(listOf(manual, gps), now))
+        assertEquals(noCarmelit, lastAutoSaved(listOf(gps, noCarmelit), now))
+        assertNull(lastAutoSaved(listOf(manual), now))
+        assertNull(lastAutoSaved(listOf(gps), now + 13 * 3600))
     }
 
     @Test fun runsSavedBeforeGpsStillLoad() {

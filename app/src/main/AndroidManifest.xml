@@ -37,6 +37,10 @@
             android:name=".GeofenceReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".ZoneRetryReceiver"
+            android:exported="false" />
+
         <!-- Geofences are forgotten on reboot and on app update. -->
         <receiver
             android:name=".BootReceiver"

@@ -21,74 +21,58 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 
 /**
- * One recording session: GPS every [INTERVAL_MS] from leaving home or work until [Track.judge]
- * says finish or drop. The track is on disk after every fix, so a killed process resumes it.
+ * GPS for the open trip, every [INTERVAL_MS] while [Track.wantsGps]. All trip decisions are
+ * [TripRecorder]'s; this only feeds it fixes and the clock, and stops itself when told. Never
+ * restarted by Android after a kill (a background restart is refused anyway): the open trip
+ * survives in its file and the arrival zone closes it.
  */
 class TrackService : Service() {
     private lateinit var client: FusedLocationProviderClient
-    private lateinit var store: TrackStore
-    private var track: Track? = null
+    private var recording = false
     private val handler = Handler(Looper.getMainLooper())
 
-    // Underground there are no fixes at all, so deadlines are also checked on a timer.
+    // Underground there are no fixes at all, so the clock is also checked on a timer.
     private val tick = object : Runnable {
         override fun run() {
-            check()
-            handler.postDelayed(this, TICK_MS)
+            if (!TripRecorder.onTick(this@TrackService)) stopGps()
+            else handler.postDelayed(this, TICK_MS)
         }
     }
 
     private val callback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
-            val t = track ?: return
             val fixes = result.locations.map { Fix(it.time / 1000, LatLng(it.latitude, it.longitude), it.accuracy) }
-            fixes.forEach(store::append)
-            track = t.copy(fixes = t.fixes + fixes)
-            check()
+            if (!TripRecorder.onFixes(this@TrackService, fixes)) stopGps()
         }
     }
 
     override fun onCreate() {
         super.onCreate()
         client = LocationServices.getFusedLocationProviderClient(this)
-        store = TrackStore(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (track != null) return START_STICKY // a second exit while recording: keep the first
-        val now = System.currentTimeMillis() / 1000
-        val resumed = store.active()?.takeIf { now - it.leftAt < SESSION_MAX_SEC }
-        val t = resumed ?: intent?.let(::fromIntent)
         // startForegroundService() obliges startForeground() even when there is nothing to record.
         try {
-            startForeground(NOTIFICATION_ID, notification(t), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
+            startForeground(NOTIFICATION_ID, notification(null), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
         } catch (e: Exception) {
             // Android refuses a background start it does not consider exempt; nothing to record then.
-            Log.w(TAG, "foreground start refused", e)
+            TripLog.get(this).add(LogKind.GPS_REFUSED, e.javaClass.simpleName)
             stopSelf()
             return START_NOT_STICKY
         }
-        if (t == null || !canRecord()) {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
+        if (recording) return START_NOT_STICKY // a second start while recording: keep going
+        val t = TripRecorder.open(this)
+        if (t == null || !t.wantsGps(System.currentTimeMillis() / 1000) || !canRecord()) {
+            stopGps()
             return START_NOT_STICKY
         }
-        if (resumed == null) store.begin(t)
-        track = t
-        TripSession.active.value = t
+        startForeground(NOTIFICATION_ID, notification(t), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
+        recording = true
         requestUpdates()
-        handler.post(tick)
-        return START_STICKY
-    }
-
-    private fun fromIntent(intent: Intent): Track? {
-        if (!intent.hasExtra(EXTRA_GOING_HOME)) return null
-        val trigger = Fix(
-            intent.getLongExtra(EXTRA_T, 0),
-            LatLng(intent.getDoubleExtra(EXTRA_LAT, 0.0), intent.getDoubleExtra(EXTRA_LNG, 0.0)),
-            intent.getFloatExtra(EXTRA_ACC, 0f),
-        )
-        return Track.start(SettingsStore(this).load(), intent.getBooleanExtra(EXTRA_GOING_HOME, false), trigger)
+        handler.postDelayed(tick, TICK_MS)
+        TripLog.get(this).add(LogKind.GPS_START, if (t.goingHome) "to home" else "to work")
+        return START_NOT_STICKY
     }
 
     @SuppressLint("MissingPermission") // checked by canRecord() before starting
@@ -97,39 +81,22 @@ class TrackService : Service() {
         client.requestLocationUpdates(request, callback, Looper.getMainLooper())
     }
 
-    private fun check() {
-        val t = track ?: return
-        when (val v = t.judge(System.currentTimeMillis() / 1000)) {
-            Verdict.CONTINUE -> {}
-            else -> end(t, v)
+    private fun stopGps() {
+        if (recording) {
+            val why = if (TripSession.active.value == null) "trip over" else "no more GPS needed"
+            TripLog.get(this).add(LogKind.GPS_STOP, why)
         }
-    }
-
-    private fun end(t: Track, verdict: Verdict) {
-        track = null
+        recording = false
         client.removeLocationUpdates(callback)
         handler.removeCallbacks(tick)
-        store.end(t, verdict)
-        val gps = if (verdict == Verdict.FINISH) t.reconstruct() else null
-        Log.i(TAG, "session ${t.leftAt} $verdict, ${t.fixes.size} fixes, run ${gps != null}")
-        if (gps != null) {
-            val runs = RunStore(this)
-            val r = record(gps, runs.active(), runs.all(), SettingsStore(this).load())
-            runs.saveAll(r.runs)
-            runs.saveActive(r.active)
-            TripSession.lastSaved.value = r.saved
-            TripSession.runsChanged.value++
-        }
-        TripSession.active.value = null
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
     override fun onDestroy() {
-        // Killed mid-session: the file stays as active.txt and the sticky restart resumes it.
+        // The trip is still open when the service dies: only the GPS goes.
         client.removeLocationUpdates(callback)
         handler.removeCallbacks(tick)
-        if (track != null) TripSession.active.value = null
         super.onDestroy()
     }
 
@@ -151,25 +118,14 @@ class TrackService : Service() {
     }
 
     companion object {
-        private const val TAG = "Carmelit"
         private const val CHANNEL = "trip"
         private const val NOTIFICATION_ID = 1
         private const val INTERVAL_MS = 10_000L
         private const val TICK_MS = 30_000L
-        private const val EXTRA_GOING_HOME = "goingHome"
-        private const val EXTRA_T = "t"
-        private const val EXTRA_LAT = "lat"
-        private const val EXTRA_LNG = "lng"
-        private const val EXTRA_ACC = "acc"
 
-        fun start(context: Context, goingHome: Boolean, trigger: Fix) {
-            val i = Intent(context, TrackService::class.java)
-                .putExtra(EXTRA_GOING_HOME, goingHome)
-                .putExtra(EXTRA_T, trigger.t)
-                .putExtra(EXTRA_LAT, trigger.at.lat)
-                .putExtra(EXTRA_LNG, trigger.at.lng)
-                .putExtra(EXTRA_ACC, trigger.acc)
-            context.startForegroundService(i)
+        /** Throws [IllegalStateException] when Android refuses a background start. */
+        fun start(context: Context) {
+            context.startForegroundService(Intent(context, TrackService::class.java))
         }
     }
 }

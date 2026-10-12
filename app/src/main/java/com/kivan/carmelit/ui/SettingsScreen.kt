@@ -214,7 +214,7 @@ fun SettingsScreen(initial: Settings, runs: List<Run>, onChange: (Settings) -> U
             GpsSection(
                 homeLL, workLL,
                 onHome = { homeLL = it }, onWork = { workLL = it },
-                onPermissions = { Geofences.sync(context, build()) },
+                onPermissions = { Geofences.ensure(context, build()) },
             )
             TripsReport(runs, toWorkStats, toHomeStats)
 

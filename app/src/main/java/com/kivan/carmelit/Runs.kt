@@ -58,6 +58,9 @@ data class Run(
 
     /** Door to door, when both ends are known. */
     val doorToDoor: Long? get() = this[Step.LEAVE]?.let { a -> this[Step.DOOR]?.let { b -> b - a } }
+
+    /** False for a trip GPS saw only at its two doors: car, bus or on foot, "no Carmelit seen". */
+    val rodeCarmelit: Boolean get() = source != Source.GPS || entranceAt != null
 }
 
 /** A manual LEAVE this much later than the GPS one was pressed on the way, not at the door. */
@@ -141,6 +144,10 @@ fun record(gps: Run, active: Run?, runs: List<Run>, s: Settings): Recorded {
     return Recorded(active, runs + saved, saved)
 }
 
+/** The last run not made by buttons alone whose door time is within 12 h of [now]: the "Saved" line after a restart. */
+fun lastAutoSaved(runs: List<Run>, now: Long): Run? =
+    runs.lastOrNull { r -> r.source != Source.MANUAL && r[Step.DOOR]?.let { now - it in 0..12 * 3600L } == true }
+
 /** Typical value plus the two ends worth planning for; all in seconds. */
 data class Summary(val n: Int, val median: Long, val low: Long, val high: Long)
 
@@ -159,7 +166,8 @@ fun summarize(values: List<Long>): Summary? {
  * quantities the planner needs.
  */
 class RunStats(runs: List<Run>, goingHome: Boolean, from: Station, to: Station) {
-    private val mine = runs.filter { it.goingHome == goingHome && it.from == from && it.to == to }
+    // "No Carmelit seen" trips (car, bus) say nothing about the train, so the advice ignores them.
+    private val mine = runs.filter { it.goingHome == goingHome && it.from == from && it.to == to && it.rodeCarmelit }
 
     private fun collect(f: (Run) -> Long?): Summary? =
         summarize(mine.mapNotNull(f).filter { it in -MAX_SEC..MAX_SEC })
