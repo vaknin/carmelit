@@ -300,7 +300,7 @@ private fun GpsSection(
     var permTick by remember { mutableIntStateOf(0) }
     // Adding zones answers a moment later; look again then.
     var zoneTick by remember { mutableIntStateOf(0) }
-    LaunchedEffect(homeLL, workLL, permTick) { delay(1500); zoneTick++ }
+    LaunchedEffect(homeLL, workLL, permTick) { repeat(4) { delay(1500); zoneTick++ } }
     var note by remember { mutableStateOf<String?>(null) }
     var settingSlot by remember { mutableStateOf<StationSlot?>(null) }
     var askRecording by remember { mutableStateOf(false) }

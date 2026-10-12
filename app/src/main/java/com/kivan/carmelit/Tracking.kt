@@ -75,6 +75,7 @@ object Geofences {
     private const val WORK = "work"
     private const val ALERT_CHANNEL = "alerts"
     private const val ALERT_ID = 2
+    private const val ZONE_REFRESH_SEC = 24 * 3600L
 
     private fun intent(context: Context): PendingIntent = PendingIntent.getBroadcast(
         context, 0, Intent(context, GeofenceReceiver::class.java),
@@ -100,7 +101,9 @@ object Geofences {
     fun ensure(context: Context, s: Settings, force: Boolean = false) {
         val p = prefs(context)
         val sig = zoneSignature(s, context.canRecord())
-        if (!force && p.getString("sig", null) == sig && !p.getBoolean("dropped", false)) return
+        // Play Services can lose zones without a word (force-stop, data clear), so a day-old add is repeated.
+        val fresh = System.currentTimeMillis() / 1000 - p.getLong("addedAt", 0) < ZONE_REFRESH_SEC
+        if (!force && p.getString("sig", null) == sig && !p.getBoolean("dropped", false) && fresh) return
         val client = LocationServices.getGeofencingClient(context)
         val pi = intent(context)
         if (s.homeLL == null || s.workLL == null || !context.canRecord()) {
@@ -137,13 +140,15 @@ object Geofences {
 
     /** Android dropped the zones or refused to add them: remember it, retry hourly, tell the user. */
     fun markDropped(context: Context, error: String, kind: LogKind = LogKind.ZONES_FAILED) {
-        prefs(context).edit { putString("error", error); putLong("errorAt", System.currentTimeMillis() / 1000); putBoolean("dropped", true) }
+        val p = prefs(context)
+        val first = !p.getBoolean("dropped", false)
+        p.edit { putString("error", error); putLong("errorAt", System.currentTimeMillis() / 1000); putBoolean("dropped", true) }
         TripLog.get(context).add(kind, error)
         context.getSystemService(AlarmManager::class.java).setInexactRepeating(
             AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + AlarmManager.INTERVAL_HOUR,
             AlarmManager.INTERVAL_HOUR, retryIntent(context),
         )
-        notifyAlert(context)
+        if (first) notifyAlert(context) // the hourly retry failing again must not buzz again
     }
 
     /** Zones are as wanted: no retry and no alert needed. */

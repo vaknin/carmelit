@@ -1,12 +1,18 @@
 package com.kivan.carmelit
 
 import android.content.Context
+import android.content.Intent
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+import androidx.core.content.edit
 
 /**
  * Applies zone reports, GPS fixes and the clock to the one open trip ([onZone], [Track.judge]),
  * saving what ends. Main thread only: the receivers and [TrackService] all run there.
  */
 object TripRecorder {
+    private const val SERVICE_SETTLE_MS = 3_000L
     private fun now() = System.currentTimeMillis() / 1000
 
     /** The open trip, from memory or the file; one that is over by now is ended first. */
@@ -20,6 +26,13 @@ object TripRecorder {
     }
 
     fun zoneReported(context: Context, e: ZoneEvent) {
+        val prefs = context.getSharedPreferences("recorder", Context.MODE_PRIVATE)
+        // A "left" that was reported after the arrival it precedes is old news, not a new trip.
+        if (!e.entered && e.at.t < prefs.getLong("lastEnterAt", 0)) {
+            TripLog.get(context).add(LogKind.ZONE_ERROR, "late exit ignored: ${e.door.name.lowercase()}")
+            return
+        }
+        if (e.entered) prefs.edit { putLong("lastEnterAt", e.at.t) }
         val open = open(context)
         apply(context, onZone(open, e, SettingsStore(context).load(), now()), open)
     }
@@ -62,8 +75,18 @@ object TripRecorder {
             log.add(LogKind.TRIP_OPEN, if (t.goingHome) "left work" else "left home")
             startGps(context)
         } else if (before != null) {
-            context.stopService(android.content.Intent(context, TrackService::class.java))
+            stopGps(context)
         }
+    }
+
+    private val handler = Handler(Looper.getMainLooper())
+    private var gpsRequestedAt = 0L
+
+    /** Android wants startForeground() within seconds of a start; a stop right behind a start waits for it. */
+    private fun stopGps(context: Context) {
+        val wait = gpsRequestedAt + SERVICE_SETTLE_MS - SystemClock.elapsedRealtime()
+        val stop = { if (TripSession.active.value == null) context.stopService(Intent(context, TrackService::class.java)) }
+        if (wait > 0) handler.postDelayed(stop, wait) else stop()
     }
 
     private fun save(context: Context, run: Run) {
@@ -82,6 +105,7 @@ object TripRecorder {
             return
         }
         try {
+            gpsRequestedAt = SystemClock.elapsedRealtime()
             TrackService.start(context)
         } catch (e: IllegalStateException) {
             // Android 12+ refuses a location service started from the background when the start is not exempt.
