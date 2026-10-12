@@ -103,7 +103,7 @@ private fun App(store: SettingsStore, runStore: RunStore, resumeTick: Int) {
 
     if (showSettings) {
         SettingsScreen(
-            settings, runs,
+            settings, runs, resumeTick,
             onChange = { updated ->
                 if (updated != settings) {
                     val doors = updated.homeLL != settings.homeLL || updated.workLL != settings.workLL

@@ -1,9 +1,16 @@
 package com.kivan.carmelit.ui
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.location.LocationManager
+import android.net.Uri
+import android.provider.Settings as AndroidSettings
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -48,11 +55,19 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.Priority
 import com.kivan.carmelit.Direction
 import com.kivan.carmelit.LatLng
 import com.kivan.carmelit.Leg
+import com.kivan.carmelit.LogKind
+import com.kivan.carmelit.Problem
+import com.kivan.carmelit.StatusInputs
+import com.kivan.carmelit.TripLog
+import com.kivan.carmelit.recordingStatus
 import com.kivan.carmelit.Geofences
 import com.kivan.carmelit.R
 import com.kivan.carmelit.Run
@@ -64,14 +79,16 @@ import com.kivan.carmelit.Step
 import com.kivan.carmelit.ZONE
 import com.kivan.carmelit.hasPermission
 import com.kivan.carmelit.Summary
+import com.kivan.carmelit.summarize
 import com.kivan.carmelit.defaultOffsetSeconds
 import com.kivan.carmelit.stopsFromOrigin
+import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun SettingsScreen(initial: Settings, runs: List<Run>, onChange: (Settings) -> Unit, onDone: (Settings) -> Unit) {
+fun SettingsScreen(initial: Settings, runs: List<Run>, resumeTick: Int, onChange: (Settings) -> Unit, onDone: (Settings) -> Unit) {
     var home by remember { mutableStateOf(initial.home) }
     var work by remember { mutableStateOf(initial.work) }
     var walkHome by remember { mutableStateOf(initial.walkHomeMin.toString()) }
@@ -212,9 +229,10 @@ fun SettingsScreen(initial: Settings, runs: List<Run>, onChange: (Settings) -> U
 
             Spacer(Modifier.height(32.dp))
             GpsSection(
-                homeLL, workLL,
+                current, resumeTick,
                 onHome = { homeLL = it }, onWork = { workLL = it },
                 onPermissions = { Geofences.ensure(context, build()) },
+                onRetryZones = { Geofences.ensure(context, build(), force = true) },
             )
             TripsReport(runs, toWorkStats, toHomeStats)
 
@@ -249,28 +267,52 @@ private fun GpsWalk(m: Summary) {
     )
 }
 
+private val SINCE: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
+
+/** "to work 31 min, today 08:40": the last trip the log saved, for the status line. */
+private fun lastTripText(context: Context): String? {
+    val e = TripLog.get(context).last(LogKind.TRIP_SAVED) ?: return null
+    val day = Instant.ofEpochSecond(e.t).atZone(ZONE)
+    val today = day.toLocalDate() == java.time.LocalDate.now(ZONE)
+    return "${e.detail}, ${if (today) "today" else day.format(SINCE)} ${e.t.hhmm()}"
+}
+
 /**
- * Door locations. Recording is on once both are set and location access is granted: setting the
- * second door asks, in order, for precise location, "Allow all the time" (geofences fire with the
- * app closed), and notifications (the recording notice).
+ * Door locations and the truth about recording. Setting the second door asks, in order, for
+ * precise location, "Allow all the time" (zones report with the app closed), and notifications.
+ * The status line says what is wrong, if anything, with a button for it; it is re-read on resume
+ * so it follows the user back from the system's own settings.
  */
 @Composable
 private fun GpsSection(
-    homeLL: LatLng?,
-    workLL: LatLng?,
+    settings: Settings,
+    resumeTick: Int,
     onHome: (LatLng) -> Unit,
     onWork: (LatLng) -> Unit,
     onPermissions: () -> Unit,
+    onRetryZones: () -> Unit,
 ) {
+    val homeLL = settings.homeLL
+    val workLL = settings.workLL
     val context = LocalContext.current
     val dim = MaterialTheme.colorScheme.onSurfaceVariant
     // Bumped after every permission answer so the status below is re-read.
     var permTick by remember { mutableIntStateOf(0) }
+    // Adding zones answers a moment later; look again then.
+    var zoneTick by remember { mutableIntStateOf(0) }
+    LaunchedEffect(homeLL, workLL, permTick) { delay(1500); zoneTick++ }
     var note by remember { mutableStateOf<String?>(null) }
     var settingSlot by remember { mutableStateOf<StationSlot?>(null) }
     var askRecording by remember { mutableStateOf(false) }
-    val fine = remember(permTick) { context.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION) }
-    val background = remember(permTick) { context.hasPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) }
+    val fine = remember(permTick, resumeTick) { context.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION) }
+    val background = remember(permTick, resumeTick) { context.hasPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) }
+
+    fun openAppSettings() {
+        context.startActivity(Intent(AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)))
+    }
+    /** Android stops showing its prompt after a refusal; the app's settings page is then the only way. */
+    fun deniedForGood(permission: String) =
+        !context.hasPermission(permission) && (context as? Activity)?.shouldShowRequestPermissionRationale(permission) == false
 
     @Suppress("MissingPermission") // only called with fine location granted
     fun fetchHere(slot: StationSlot) {
@@ -288,11 +330,17 @@ private fun GpsSection(
             .addOnFailureListener { note = "Location failed: ${it.message}" }
     }
 
-    val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { permTick++; onPermissions() }
+    val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        permTick++
+        onPermissions()
+        if (deniedForGood(Manifest.permission.POST_NOTIFICATIONS)) openAppSettings()
+    }
     val backgroundLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         permTick++
         onPermissions()
-        if (Build.VERSION.SDK_INT >= 33 && !context.hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
+        if (deniedForGood(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
+            openAppSettings()
+        } else if (Build.VERSION.SDK_INT >= 33 && !context.hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {
             notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
@@ -302,12 +350,17 @@ private fun GpsSection(
         if (!context.hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
             note = "Needs precise location"
             settingSlot = null
+            if (deniedForGood(Manifest.permission.ACCESS_FINE_LOCATION)) openAppSettings()
             return@rememberLauncherForActivityResult
         }
         settingSlot?.let { fetchHere(it); settingSlot = null }
             ?: backgroundLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
     }
     val locationPerms = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+    val resolveLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
+        permTick++
+        onRetryZones()
+    }
 
     fun setHere(slot: StationSlot) {
         if (fine) fetchHere(slot) else { settingSlot = slot; fineLauncher.launch(locationPerms) }
@@ -319,6 +372,17 @@ private fun GpsSection(
             notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
+    /** Google's one-tap "turn on location" dialog; the system's location page when it can't be shown. */
+    fun turnOnLocation() {
+        val request = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 60_000L).build()
+        LocationServices.getSettingsClient(context)
+            .checkLocationSettings(LocationSettingsRequest.Builder().addLocationRequest(request).build())
+            .addOnSuccessListener { permTick++; onRetryZones() }
+            .addOnFailureListener { e ->
+                if (e is ResolvableApiException) resolveLauncher.launch(IntentSenderRequest.Builder(e.resolution).build())
+                else context.startActivity(Intent(AndroidSettings.ACTION_LOCATION_SOURCE_SETTINGS))
+            }
+    }
 
     LaunchedEffect(askRecording) { if (askRecording) { askRecording = false; requestRecording() } }
 
@@ -326,15 +390,38 @@ private fun GpsSection(
     LocationRow("Home door", homeLL) { setHere(StationSlot.HOME) }
     LocationRow("Work door", workLL) { setHere(StationSlot.WORK) }
     note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = dim) }
-    val (status, fix) = when {
-        homeLL == null || workLL == null -> "Set both doors, standing at each" to false
-        !fine || !background -> "Needs location access “Allow all the time”" to true
-        else -> "Recording trips automatically · walks that don't reach the station are not kept" to false
+    val status = remember(permTick, resumeTick, zoneTick, homeLL, workLL) {
+        val zones = Geofences.state(context, settings)
+        recordingStatus(
+            StatusInputs(
+                doorsSet = homeLL != null && workLL != null,
+                fine = fine,
+                background = background,
+                notifications = Build.VERSION.SDK_INT < 33 || context.hasPermission(Manifest.permission.POST_NOTIFICATIONS),
+                locationOn = context.getSystemService(LocationManager::class.java).isLocationEnabled,
+                zonesOk = zones.ok,
+                zonesSince = zones.addedAt?.let { Instant.ofEpochSecond(it).atZone(ZONE).format(SINCE) },
+                zoneError = zones.error,
+                autoRevokeExempt = Build.VERSION.SDK_INT < 30 || context.packageManager.isAutoRevokeWhitelisted,
+                lastTrip = lastTripText(context),
+            ),
+        )
     }
+    val button: Pair<String, () -> Unit>? = when (status.problem) {
+        Problem.NO_LOCATION, Problem.NO_BACKGROUND -> "Grant" to ::requestRecording
+        Problem.LOCATION_OFF -> "Turn on" to ::turnOnLocation
+        Problem.ZONES_FAILED -> "Retry" to { onRetryZones(); permTick++ }
+        Problem.NOTIFICATIONS_OFF -> "Allow" to { notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }
+        Problem.MAY_BE_PAUSED -> "Fix" to {
+            context.startActivity(Intent(Intent.ACTION_AUTO_REVOKE_PERMISSIONS, Uri.fromParts("package", context.packageName, null)))
+        }
+        Problem.NO_DOORS, null -> null
+    }
+    val broken = status.problem != null && status.problem != Problem.NO_DOORS
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(status, style = MaterialTheme.typography.bodySmall,
-            color = if (fix) MaterialTheme.colorScheme.error else dim, modifier = Modifier.weight(1f))
-        if (fix) TextButton(onClick = ::requestRecording) { Text("Grant") }
+        Text(status.line, style = MaterialTheme.typography.bodySmall,
+            color = if (broken) MaterialTheme.colorScheme.error else dim, modifier = Modifier.weight(1f))
+        button?.let { (label, onClick) -> TextButton(onClick = onClick) { Text(label) } }
     }
 }
 
@@ -371,6 +458,15 @@ private fun TripsReport(runs: List<Run>, toWork: RunStats, toHome: RunStats) {
                 style = MaterialTheme.typography.bodyMedium.merge(Tabular))
         }
     }
+    // Door to door without the train being seen (car, bus, on foot): kept apart, never in the advice.
+    for ((label, goingHome) in listOf("To work" to false, "To home" to true)) {
+        summarize(runs.filter { !it.rodeCarmelit && it.goingHome == goingHome }.mapNotNull { it.doorToDoor?.takeIf { d -> d > 0 } })?.let {
+            Spacer(Modifier.height(8.dp))
+            Text("Other ways, no Carmelit seen · $label: ${mmss(it.median)} door to door (${it.n} ${if (it.n == 1) "trip" else "trips"})",
+                style = MaterialTheme.typography.bodyMedium.merge(Tabular),
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
     Spacer(Modifier.height(8.dp))
     for (r in trips) {
         val leave = r[Step.LEAVE]!!
@@ -380,7 +476,7 @@ private fun TripsReport(runs: List<Run>, toWork: RunStats, toHome: RunStats) {
                 mmss(r.doorToDoor!!),
                 r.departure?.let { "train ${it.hhmm()}" },
                 if (r.goingHome) "home" else "work",
-                when (r.source) { Source.GPS -> "GPS"; Source.MERGED -> "taps + GPS"; Source.MANUAL -> "taps" },
+                when (r.source) { Source.GPS -> if (r.rodeCarmelit) "GPS" else "no Carmelit"; Source.MERGED -> "taps + GPS"; Source.MANUAL -> "taps" },
             ).joinToString(" · "),
             style = MaterialTheme.typography.bodySmall.merge(Tabular),
             color = MaterialTheme.colorScheme.onSurfaceVariant,

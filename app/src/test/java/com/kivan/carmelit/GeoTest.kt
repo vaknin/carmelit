@@ -218,6 +218,14 @@ class GeoTest {
         assertEquals(home, LatLng.decode(home.encode()))
     }
 
+    @Test fun zonesAreReaddedOnlyWhenADoorOrThePermissionChanges() {
+        val sig = zoneSignature(settings, true)
+        assertEquals(sig, zoneSignature(settings.copy(walkHomeMin = 30, marginMin = 3, work = Station.MASADA), true))
+        assertTrue(sig != zoneSignature(settings.copy(homeLL = work), true))
+        assertTrue(sig != zoneSignature(settings.copy(workLL = null), true))
+        assertTrue(sig != zoneSignature(settings, false))
+    }
+
     @Test fun stationsAreWhereTheLineIs() {
         // Ir Tahtit to Merkaz HaCarmel is ~1.8 km as the crow flies.
         val d = distanceM(STATION_POINTS.getValue(Station.IR_TAHTIT), mc)
