@@ -104,6 +104,12 @@ object Geofences {
         // Play Services can lose zones without a word (force-stop, data clear), so a day-old add is repeated.
         val fresh = System.currentTimeMillis() / 1000 - p.getLong("addedAt", 0) < ZONE_REFRESH_SEC
         if (!force && p.getString("sig", null) == sig && !p.getBoolean("dropped", false) && fresh) return
+        val why = when {
+            force -> "forced"
+            p.getString("sig", null) != sig -> "doors or permission changed"
+            p.getBoolean("dropped", false) -> "dropped"
+            else -> "refresh"
+        }
         val client = LocationServices.getGeofencingClient(context)
         val pi = intent(context)
         if (s.homeLL == null || s.workLL == null || !context.canRecord()) {
@@ -129,7 +135,7 @@ object Geofences {
             .addOnSuccessListener {
                 val now = System.currentTimeMillis() / 1000
                 p.edit { putString("sig", sig); putLong("addedAt", now); remove("error"); remove("errorAt"); putBoolean("dropped", false) }
-                TripLog.get(context).add(LogKind.ZONES_ADDED)
+                TripLog.get(context).add(LogKind.ZONES_ADDED, why)
                 settle(context)
             }
             .addOnFailureListener {
